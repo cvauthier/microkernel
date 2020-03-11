@@ -2,6 +2,7 @@
 .globl load_page_directory
 .globl enable_paging
 .globl load_gdt
+.globl load_idt
 
 gdtr:
 .word 0 # GDT size
@@ -21,6 +22,15 @@ reload_CS:
 	mov %ax, %fs
 	mov %ax, %gs
 	mov %ax, %ss
+	ret
+
+.word 255
+idt: .long 0 # Address
+
+load_idt:
+	mov 4(%esp), %eax
+	mov %eax, idt
+	lidt idt
 	ret
 
 load_page_directory:

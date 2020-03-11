@@ -7,10 +7,12 @@
 
 extern uint32_t _kernel_end;
 extern void load_gdt(uint64_t *ptr, uint32_t size);
+extern void load_idt(uint64_t *ptr);
 extern void load_page_directory(uint32_t *ptr);
 extern void enable_paging();
 
 uint64_t kernel_gdt[4];
+uint64_t kernel_idt[256];
 uint32_t page_directory[1024] __attribute__((aligned(4096)));
 uint32_t page_table_1[1024] __attribute__((aligned(4096)));
 uint32_t page_table_2[1024] __attribute__((aligned(4096)));
@@ -47,6 +49,16 @@ void add_gdt_descriptor(uint8_t *target, uint32_t limit, uint32_t base, uint8_t 
     target[5] = type;
 }
 
+void add_idt_descriptor(uint8_t *target, uint32_t base, uint8_t type)
+{
+	target[0] = base&0xFF;
+	target[1] = (base>>8)&0xFF;
+	target[2] = target[3] = target[4] = 0;
+	target[5] = type;
+	target[6] = (base>>16)&0xFF;
+	target[7] = (base>>24);
+}
+
 void init_memory()
 {
 	uint8_t *p = (uint8_t*) kernel_gdt;
@@ -54,6 +66,8 @@ void init_memory()
 	add_gdt_descriptor(p+8, 0x3FFFFFFF, 0, 0x9A); // Code segment
 	add_gdt_descriptor(p+16,0x3FFFFFFF, 0, 0x92); // Data segment
 	load_gdt(kernel_gdt, 3*8);
+
+	load_idt(kernel_idt);
 
 	unsigned int i;
 	for (i = 0 ; i < 1024 ; i++)
