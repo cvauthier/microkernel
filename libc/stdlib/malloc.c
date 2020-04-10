@@ -4,7 +4,8 @@
 #if defined(__is_libk)
 #include <kernel/memory.h>
 
-static void *kernel_heap_end = 0;
+static uint32_t *kernel_heap_begin = 0x100000;
+static uint32_t *kernel_heap_end = 0;
 #endif
 
 /* Block structure : 
@@ -23,64 +24,58 @@ void *malloc(size_t size)
 		kernel_heap_end = kernel_heap_begin+1024;
 		map_page(kernel_heap_begin);
 
-		uint32_t *flags = (uint32_t*) kernel_heap_begin;
-		*flags = 1024;
+		*kernel_heap_begin = 4096;
 	}
 
-	void *previous = 0;
-	void *current = kernel_heap_begin;
+	uint32_t *prev = 0;
+	uint32_t *cur = kernel_heap_begin;
 
-	while (current != kernel_heap_end)
+	while (cur != kernel_heap_end)
 	{
-		uint32_t *flags = (uint32_t*) current;
-		size_t block_size = *flags & ~0x3;
+		size_t block_size = *cur & ~0x3;
 
-		if ((*flags & 1) == 0 && block_size >= size)
+		if ((*cur & 1) == 0 && block_size >= size)
 		{
 			// Free block
-			void *result = current+4;
+			void *result = (void*) (cur+1);
 			if (block_size < size + 8)
 			{
-				*flags = block_size | 1;
+				*cur = block_size | 1;
 			}
 			else
 			{
-				*flags = size | 1;
-				current += size;
-				flags = (uint32_t*) current;
-				*flags = (block_size - size);
+				*cur = size | 1;
+				cur += size>>2;
+				*cur = block_size - size;
 			}
 			return result;
 		}
 
-		previous = current;
-		current += block_size;
+		prev = cur;
+		cur += block_size>>2;
 	}
 
-	uint32_t *flags = (uint32_t*) previous;
-	size_t available = (*flags & 1) ? 0 : *flags & ~0x3;
+	size_t available = (*prev & 1) ? 0 : *prev & ~0x3;
 	
 	while (available < size)
 	{
-		available += 1024;
+		available += 4096;
 		map_page(kernel_heap_end);
 		kernel_heap_end += 1024;
 	}
 
-	current = (*flags & 1) ? current : previous;
-	flags = (uint32_t*) current;
-	void *result = current+4;
+	cur = (*prev & 1) ? cur : prev;
+	void *result = (void*) (cur+1);
 
 	if (available < size + 8)
 	{
-		*flags = available | 1;
+		*cur = available | 1;
 	}
 	else
 	{
-		*flags = size | 1;
-		current += size;
-		flags = (uint32_t*) current;
-		*flags = (available-size);
+		*cur = size | 1;
+		cur += size>>2;
+		*cur = (available-size);
 	}
 	return result;
 	

@@ -12,7 +12,10 @@
 #define IDT_TRAP_GATE 0xF
 
 void add_idt_descriptor(uint8_t *target, uint32_t base, uint16_t selector, uint8_t type);
-
 void interrupts_setup();
+
+void page_fault_handler();
+void default_handler();
+void irq_handler(int num);
 
 #endif

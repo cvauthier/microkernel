@@ -93,7 +93,7 @@ except7:
 	iret
 
 except8:
-	add 4,%esp
+	add $4,%esp
 	pushal
 	cld
 	call default_handler
@@ -108,7 +108,7 @@ except9:
 	iret
 
 except10:
-	add 4,%esp
+	add $4,%esp
 	pushal
 	cld
 	call default_handler
@@ -137,7 +137,7 @@ except13:
 	iret
 
 except14:
-	add 4,%esp
+	add $4,%esp
 	pushal
 	cld
 	call page_fault_handler
@@ -174,7 +174,7 @@ except19:
 
 irq0:
 	pushal
-	mov 0, %eax
+	mov $0, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -183,7 +183,7 @@ irq0:
 
 irq1:
 	pushal
-	mov 1, %eax
+	mov $1, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -192,7 +192,7 @@ irq1:
 
 irq2:
 	pushal
-	mov 2, %eax
+	mov $2, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -201,7 +201,7 @@ irq2:
 
 irq3:
 	pushal
-	mov 3, %eax
+	mov $3, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -210,7 +210,7 @@ irq3:
 
 irq4:
 	pushal
-	mov 4, %eax
+	mov $4, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -219,7 +219,7 @@ irq4:
 
 irq5:
 	pushal
-	mov 5, %eax
+	mov $5, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -228,7 +228,7 @@ irq5:
 
 irq6:
 	pushal
-	mov 6, %eax
+	mov $6, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -237,7 +237,7 @@ irq6:
 
 irq7:
 	pushal
-	mov 7, %eax
+	mov $7, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -246,7 +246,7 @@ irq7:
 
 irq8:
 	pushal
-	mov 8, %eax
+	mov $8, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -255,7 +255,7 @@ irq8:
 
 irq9:
 	pushal
-	mov 9, %eax
+	mov $9, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -264,7 +264,7 @@ irq9:
 
 irq10:
 	pushal
-	mov 10, %eax
+	mov $10, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -273,7 +273,7 @@ irq10:
 
 irq11:
 	pushal
-	mov 11, %eax
+	mov $11, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -282,7 +282,7 @@ irq11:
 
 irq12:
 	pushal
-	mov 12, %eax
+	mov $12, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -291,7 +291,7 @@ irq12:
 
 irq13:
 	pushal
-	mov 13, %eax
+	mov $13, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -300,7 +300,7 @@ irq13:
 
 irq14:
 	pushal
-	mov 14, %eax
+	mov $14, %eax
 	push %eax
 	call irq_handler
 	pop %eax
@@ -309,7 +309,7 @@ irq14:
 
 irq15:
 	pushal
-	mov 15, %eax
+	mov $15, %eax
 	push %eax
 	call irq_handler
 	pop %eax

@@ -4,20 +4,21 @@
 #include <string.h>
 
 #include <kernel/memory.h>
+#include "memory_i386.h"
+#include "interrupts.h"
 
 extern uint32_t _kernel_end;
+extern uint32_t tss_stack_top;
+
 extern void load_gdt(uint64_t *ptr, uint32_t size);
-extern void load_idt(uint64_t *ptr);
-extern void load_page_directory(uint32_t *ptr);
-extern void enable_paging();
+extern void tlb_flush();
+extern void tss_flush();
 
-uint64_t kernel_gdt[4];
-uint64_t kernel_idt[256];
-uint32_t page_directory[1024] __attribute__((aligned(4096)));
-uint32_t page_table_1[1024] __attribute__((aligned(4096)));
-uint32_t page_table_2[1024] __attribute__((aligned(4096)));
+uint64_t kernel_gdt[6];
+uint32_t kernel_tss[TSS_SIZE/4];
 
-uint32_t *stack_top;
+
+uint32_t next_page;
 
 void *get_physical_addr(void *virtual_addr)
 {
@@ -35,94 +36,72 @@ void add_gdt_descriptor(uint8_t *target, uint32_t limit, uint32_t base, uint8_t 
         target[6] = 0xC0;
     } 
 		else 
+		{
         target[6] = 0x40;
- 
-    target[0] = limit & 0xFF;
-    target[1] = (limit >> 8) & 0xFF;
-    target[6] |= (limit >> 16) & 0xF;
- 
+    }
+    
+		target[0] = limit & 0xFF;
+		target[1] = (limit >> 8) & 0xFF;
+		target[6] |= (limit >> 16) & 0xF;
+    
     target[2] = base & 0xFF;
-    target[3] = (base >> 8) & 0xFF;
-    target[4] = (base >> 16) & 0xFF;
+		target[3] = (base >> 8) & 0xFF;
+		target[4] = (base >> 16) & 0xFF;
     target[7] = (base >> 24) & 0xFF;
  
     target[5] = type;
 }
 
-void add_idt_descriptor(uint8_t *target, uint32_t base, uint8_t type)
-{
-	target[0] = base&0xFF;
-	target[1] = (base>>8)&0xFF;
-	target[2] = target[3] = target[4] = 0;
-	target[5] = type;
-	target[6] = (base>>16)&0xFF;
-	target[7] = (base>>24);
-}
-
-void init_memory()
+void memory_setup()
 {
 	uint8_t *p = (uint8_t*) kernel_gdt;
 	add_gdt_descriptor(p, 0, 0, 0); // Null segment
-	add_gdt_descriptor(p+8, 0x3FFFFFFF, 0, 0x9A); // Code segment
-	add_gdt_descriptor(p+16,0x3FFFFFFF, 0, 0x92); // Data segment
-	load_gdt(kernel_gdt, 3*8);
-
-	load_idt(kernel_idt);
-
-	unsigned int i;
-	for (i = 0 ; i < 1024 ; i++)
-	{
-		page_table_1[i] = (i << 12) | 3; // Write & Present
-		page_table_2[i] = ((i+1024) << 12) | 3;
-		page_directory[i] = 0x00000002; // Write
-	}
-	page_directory[0] = ((unsigned int) page_table_1) | 3;
-	page_directory[1] = ((unsigned int) page_table_2) | 3;
-	page_directory[1023] = ((unsigned int) page_directory) | 3;
-
-	load_page_directory(page_directory);
-	enable_paging();
-
-	stack_top = (&_kernel_end) + 128;
-	*stack_top = 0;
-	for (uint32_t i = 2<<10 ; i < 2<<30 ; i+=4*1024)
-		*(++stack_top) = i;
+	add_gdt_descriptor(p+8, 0xFFFFFFFF, 0, GDT_PRESENT | GDT_DPL_0 | GDT_CODE_DATA | GDT_EXEC | GDT_RW);
+	add_gdt_descriptor(p+16,0xFFFFFFFF, 0, GDT_PRESENT | GDT_DPL_0 | GDT_CODE_DATA | GDT_RW);
+	add_gdt_descriptor(p+24,0xFFFFFFFF, 0, GDT_PRESENT | GDT_DPL_3 | GDT_CODE_DATA | GDT_EXEC | GDT_RW);
+	add_gdt_descriptor(p+32,0xFFFFFFFF, 0, GDT_PRESENT | GDT_DPL_3 | GDT_CODE_DATA | GDT_RW);
 	
-	i = (uint32_t) (stack_top+1);
-	i = ((i+1023)>>10)<<10;
-	kernel_heap_begin = (void*) i;
+	memset(kernel_tss, 0, TSS_SIZE);
+	kernel_tss[TSS_SS0] = 0x10; // kernel data segment
+	kernel_tss[TSS_ESP0] = (uint32_t) &tss_stack_top; // kernel stack
+	add_gdt_descriptor(p+40, TSS_SIZE-1, (uint32_t) kernel_tss, GDT_PRESENT | GDT_DPL_3 | GDT_EXEC | GDT_AC); 
+
+	load_gdt(kernel_gdt, 6*8);
+	tss_flush();
+
+	interrupts_setup();
+
+	next_page = (uint32_t) get_physical_addr(&_kernel_end); 
+	next_page = next_page/4096*4096;
 }
 
-void *alloc_physical_page()
+void *simple_alloc_physical_page()
 {
-	if (*stack_top == 0)
-		return (void*) 0;
-	
-	return (void*) *(stack_top--);
-}
-
-void free_physical_page(void *page_ptr)
-{
-	*(++stack_top) = (uint32_t) page_ptr;
+	next_page += 4096;
+	return (void*) next_page;
 }
 
 void map_page(void *page_addr)
 {
-	uint32_t *pd = (uint32_t*) (0xFFFFF000 | ((uint32_t) page_addr & 0xFFF));
+	uint32_t addr = (uint32_t) page_addr;
+	uint32_t *pd = (uint32_t*) (0xFFFFF000 | ((addr>>22)<<2) );
 	if (!(*pd & 0x1))
 	{
 		// Allocate new page directory
-		void *new_phys_page = alloc_physical_page();
-		// TODO : Add error if new_phys_page = 0
-		*pd |= (uint32_t) new_phys_page & 0xFFFFF000 | 3;
+		void *new_phys_page = simple_alloc_physical_page();
+		*pd |= (((uint32_t) new_phys_page) & 0xFFFFF000) | 3;
+		tlb_flush();
+
+		uint32_t *pt = (uint32_t*) (0xFFC00000 | (addr>>22)<<12);
+		memset(pt, 0, 4096);
 	}
 
-	uint32_t *pt = (uint32_t*) (0xFFC00000 | ((uint32_t) page_addr >> 10) & ~0x3);
+	uint32_t *pt = (uint32_t*) (0xFFC00000 | ((addr>>12)<<2));
 	if (!(*pt & 0x1))
 	{
-		void *new_phys_page = alloc_physical_page();
-		// TODO : Add error if new_phys_page = 0
-		*pt |= (uint32_t) new_phys_page & 0xFFFFF000 | 3;
+		void *new_phys_page = simple_alloc_physical_page();
+		*pt |= (((uint32_t) new_phys_page) & 0xFFFFF000) | 3;
+		tlb_flush();
 	}
 }
 

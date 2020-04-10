@@ -4,9 +4,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-void *kernel_heap_begin;
-
-void init_memory();
+void memory_setup();
 
 void map_page(void *page_addr);
 
