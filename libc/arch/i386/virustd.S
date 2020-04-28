@@ -1,12 +1,22 @@
 .section .text
 
-.globl wait # int wait()
+.globl wait # int wait(int *pid, int *code)
 .globl fork # int fork()
 .globl exit # void exit(int code)
 
 wait:
+	push %ebp
+	push %ebx
+	mov %esp, %ebp
 	mov $0, %eax
 	int $0x80
+	mov 12(%ebp), %edx # pid -> edx
+	mov %ebx, (%edx) # *pid = ebx
+	mov 16(%ebp), %edx # code -> edx
+	mov %ecx, (%edx) # *code = ecx
+	mov %ebp, %esp
+	pop %ebx
+	pop %ebp
 	ret
 
 fork:

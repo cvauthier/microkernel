@@ -4,7 +4,7 @@
 #if defined(__is_libk)
 #include <kernel/memory.h>
 
-static uint32_t *kernel_heap_begin = 0x100000;
+static uint32_t *kernel_heap_begin = 0;
 static uint32_t *kernel_heap_end = 0;
 #endif
 
@@ -21,6 +21,7 @@ void *malloc(size_t size)
 #if defined(__is_libk)
 	if (!kernel_heap_end)
 	{
+		kernel_heap_begin = get_heap_begin();
 		kernel_heap_end = kernel_heap_begin+1024;
 		map_page(kernel_heap_begin);
 

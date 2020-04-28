@@ -1,27 +1,68 @@
 #include <kernel/process.h>
 
+#include <stdlib.h>
+#include <string.h>
+
 #include "memory_i386.h"
 #include "process_i386.h"
 
-proc_data_t *fork_proc_data(proc_data_t *src, int child_pid)
+proc_data_t *new_proc_data()
 {
-	proc_data_t *dst = (proc_data_t*) malloc(sizeof(proc_data_t));
+	proc_data_t *data = (proc_data_t*) malloc(sizeof(proc_data_t));
 	
-	if (!(dst->pd_physical_addr = alloc_physical_page()))
+	if (!(data->pd_physical_addr = alloc_physical_page()))
 	{
-		free(dst);
+		free(data);
 		return 0;
 	}
 	
-	dst->kernel_stack_addr = (uint32_t*) (malloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE);
+	data->kernel_stack_addr = (uint32_t*) (malloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE);
+	
+	uint32_t *pd_data = &temp_page_1;
+	add_pt_entry(pd_data, data->pd_physical_addr);
+	tlb_flush();
+
+	memset(pd_data, 0, 4096);
+	for (int i = 768 ; i < 1023 ; i++)
+		pd_data[i] = (PD_ADDR)[i];
+	pd_data[1023] = data->pd_physical_addr | 0x3;
+
+	return data;
+}
+
+void kernel_proc(int (*start)(void*), void *arg)
+{
+	proc_data_t *proc = new_proc_data();
+	int pid = new_pid();
+
+	proc_list[pid] = (process_t*) malloc(sizeof(process_t));
+	proc_list[pid]->parent_pid = (cur_pid == -1) ? pid : cur_pid;
+	proc_list[pid]->priority =	0;
+	proc_list[pid]->state = Runnable;
+	proc_list[pid]->arch_data = proc;
+
+	proc->eip = (uint32_t) kernel_proc_start;
+	proc->esp = (uint32_t) (proc->kernel_stack_addr-2);
+	proc->kernel_stack_addr[-1] = (uint32_t) arg;
+	proc->kernel_stack_addr[-2] = (uint32_t) start;
+}
+
+proc_data_t *fork_proc_data(proc_data_t *src)
+{
+	proc_data_t *dst;
+	
+	if (!(dst = new_proc_data()))
+		return 0;
+
+	memcpy(((uint8_t*)dst->kernel_stack_addr)-KERNEL_STACK_SIZE, ((uint8_t*)src->kernel_stack_addr)-KERNEL_STACK_SIZE, KERNEL_STACK_SIZE);
 
 	uint32_t *pd_src = &temp_page_1;
 	uint32_t *pd_dst = &temp_page_2;
 	add_pt_entry(pd_src, src->pd_physical_addr);
 	add_pt_entry(pd_dst, dst->pd_physical_addr);
-	memset(pd_dst, 0, 4096);
+	tlb_flush();
 
-	for (int i = 0 ; i < 1024 ; i++)
+	for (int i = 0 ; i < 768 ; i++)
 	{
 		if (!(pd_src[i] & 1))
 			continue;
@@ -37,6 +78,7 @@ proc_data_t *fork_proc_data(proc_data_t *src, int child_pid)
 		uint32_t *pt_dst = &temp_page_4;
 		add_pt_entry(pt_src, pd_src[i] & 0xFFFFF000);
 		add_pt_entry(pt_dst, page);
+		tlb_flush();
 		memset(pt_dst, 0, 4096);
 
 		for (int j = 0 ; j < 1024 ; j++)
@@ -56,6 +98,7 @@ proc_data_t *fork_proc_data(proc_data_t *src, int child_pid)
 			uint32_t *page_dst = &temp_page_6;
 			add_pt_entry(page_src, pt_src[j] & 0xFFFFF000);
 			add_pt_entry(page_dst, page);
+			tlb_flush();
 			memcpy(page_dst, page_src, 4096);
 		}
 	}
@@ -63,23 +106,19 @@ proc_data_t *fork_proc_data(proc_data_t *src, int child_pid)
 	return dst;
 }
 
-void wait_end_proc_data(proc_data_t *data, int child_pid)
-{
-	int ofs = (data->kernel_stack_addr[-1] == 0x23) ? 0 : STACK_R0_OFS;
-	data->kernel_stack_addr[STACK_EAX] = child_pid;
-}
-
 void free_proc_data(proc_data_t *proc)
 {
 	uint32_t *pd_temp = &temp_page_1;
 	add_pt_entry(pd_temp, proc->pd_physical_addr);
-	for (int i = 0 ; i < 1024 ; i++)
+	tlb_flush();
+	for (int i = 0 ; i < 768 ; i++)
 	{
 		if (!(pd_temp[i] & 1))
 			continue;
 		
 		uint32_t *pt_temp = &temp_page_2;
 		add_pt_entry(pt_temp, pd_temp[i] & 0xFFFFF000);
+		tlb_flush();
 
 		for (int j = 0 ; j < 1024 ; j++)
 		{
@@ -94,48 +133,60 @@ void free_proc_data(proc_data_t *proc)
 	free(proc);
 }
 
-void syscall_handler()
+void syscall_handler(uint32_t *regs)
 {
-	proc_data_t *data = proc_list[cur_pid]->arch_data;
-	uint32_t *stack = data6>kernel_stack_addr;
-	int ofs = (stack[-1] == 0x23) ? 0 : STACK_R0_OFS; 
-
-	int *eax = (int*) (data->kernel_stack_addr+STACK_EAX+ofs);
-	int resched = 0;
+	int *eax = (int*) (regs+PUSHA_EAX);
+	int *ebx = (int*) (regs+PUSHA_EBX);
+	int *ecx = (int*) (regs+PUSHA_ECX);
 
 	switch (*eax)
 	{
 		case Wait:
-			*eax = syscall_wait();
-			if (*eax < 0)
-				resched = 1;
+			*eax = syscall_wait(ebx, ecx);
+			while (*eax < 0)
+			{
+				reschedule();
+				*eax = syscall_wait(ebx, ecx);
+			}
 			break;
 		case Fork:
-			*eax = syscall_fork();	
+			*eax = syscall_fork();
 			break;
 		case Exit:
-			syscall_exit(data->kernel_stack_addr[STACK_EBX+ofs]);
-			resched = 1;
+			syscall_exit(*ebx);
+			reschedule();
 			break;
 		default:
 			*eax = -1;
 	}
+}
 
-	if (resched)
+void scheduler_tick()
+{
+ 	if (!scheduling_on)
+		return;
+
+	if (!(--proc_list[cur_pid]->ms_left))
 		reschedule();
 }
 
 void reschedule()
 {
-	//int prev_pid = cur_pid;
+	int prev_pid = cur_pid;
 	schedule();
+	
+	if (prev_pid == cur_pid)
+		return;
 
-	uint32_t *stack = proc_list[cur_pid]->arch_data->kernel_stack_addr;
-	int ofs = (stack[-1] == 0x23) ? 0 : STACK_R0_OFS;
+	proc_data_t *next = proc_list[cur_pid]->arch_data;
 
-	load_pd(proc_list[cur_pid]->arch_data->pd_physical_addr);
-	set_tss_stack(stack);
-	jump_user_proc(stack+STACK_BOTTOM+ofs);
+	load_pd(next->pd_physical_addr);
+	set_tss_stack(next->kernel_stack_addr);
+	
+	if (prev_pid == -1)
+		switch_initial(next);
+	else
+		switch_proc(proc_list[prev_pid]->arch_data, next);
 }
 
 

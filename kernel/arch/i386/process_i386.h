@@ -5,38 +5,36 @@
 
 #define KERNEL_STACK_SIZE 4096
 
-#define STACK_SS -1
-#define STACK_ESP -2
-#define STACK_EFLAGS -3
-#define STACK_CS -4
-#define STACK_EIP -5
-#define STACK_EAX -6
-#define STACK_ECX -7
-#define STACK_EDX -8
-#define STACK_EBX -9
-#define STACK_ESI -12
-#define STACK_EDI -13
-#define STACK_BOTTOM -13
+#define PUSHA_EAX -1
+#define PUSHA_ECX -2
+#define PUSHA_EDX -3
+#define PUSHA_EBX -4
+#define PUSHA_ESI -7
+#define PUSHA_EDI -8
 
-#define STACK_R0_OFS 2
-
-struct proc_data_t
+struct __attribute__((__packed__)) proc_data_t
 {
 	uint32_t pd_physical_addr;
 	uint32_t *kernel_stack_addr;
+	/*uint32_t code_begin;
+	uint32_t code_end;
+	uint32_t heap_begin;
+	uint32_t heap_end;
+	uint32_t stack_top;
+	uint32_t stack_bottom;*/
+	uint32_t eip;
+	uint32_t esp;
 };
 typedef struct proc_data_t proc_data_t;
 
-extern uint32_t temp_page_1;
-extern uint32_t temp_page_2;
-extern uint32_t temp_page_3;
-extern uint32_t temp_page_4;
-extern uint32_t temp_page_5;
-extern uint32_t temp_page_6;
+extern void jmp_user_proc(uint32_t *stack);
+extern void switch_proc(proc_data_t *prev, proc_data_t *next);
+extern void switch_initial(proc_data_t *init);
+extern void kernel_proc_start();
 
-void jmp_user_proc(uint32_t *stack);
+proc_data_t *new_proc_data();
 
-void syscall_handler();
+void syscall_handler(uint32_t *regs);
 
 void reschedule();
 

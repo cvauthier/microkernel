@@ -1,7 +1,29 @@
+.section .bss, "aw", @nobits
+.globl temp_page_1
+.globl temp_page_2
+.globl temp_page_3
+.globl temp_page_4
+.globl temp_page_5
+.globl temp_page_6
+.align 4096
+temp_page_1:
+.skip 4096
+temp_page_2:
+.skip 4096
+temp_page_3:
+.skip 4096
+temp_page_4:
+.skip 4096
+temp_page_5:
+.skip 4096
+temp_page_6:
+.skip 4096
+
 .section .text
 .globl load_gdt # void load_gdt(void *gdt_addr, uint16_t size)
 .globl load_idt # void load_idt(void *idt_addr)
 .globl tss_flush # void tss_flush()
+.globl load_pd # void load_pd(uint32_t pd_physical_addr)
 .globl tlb_flush # void tlb_flush()
 .globl outb # void outb(uint16_t port, uint8_t val)
 .globl inb # uint8_t inb(uint16_t port)
@@ -34,12 +56,16 @@ load_idt:
 	mov 4(%esp), %eax
 	mov %eax, idt+2
 	lidt idt
-	sti
 	ret
 
 tss_flush:
 	mov $0x2B, %ax # 0x2B = 0x28 (index) | 0x3 (RPL)
 	ltr %ax
+	ret
+
+load_pd:
+	mov 4(%esp), %eax
+	mov %eax, %cr3
 	ret
 
 tlb_flush:

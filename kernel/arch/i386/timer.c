@@ -2,6 +2,7 @@
 #include <stdint.h>
 
 #include <kernel/timer.h>
+#include <kernel/process.h>
 
 #define PIT_FREQUENCY 1193182
 
@@ -56,9 +57,13 @@ void clock_tick()
 		while (callout_list != 0 && callout_list->callout.ms_left == 0)
 		{
 			(*callout_list->callout.func)(callout_list->callout.arg);
-			callout_list = callout_list->next;
+			calloutll_t *next = callout_list->next;
+			free(callout_list);
+			callout_list = next;
 		}
 	}
+
+	scheduler_tick();
 }
 
 void timeout(void (*func)(void*), void *arg, int ms)
@@ -81,6 +86,5 @@ void timeout(void (*func)(void*), void *arg, int ms)
 	if (new_elt->next != 0)
 		new_elt->next->callout.ms_left -= ms;
 }
-
 
 

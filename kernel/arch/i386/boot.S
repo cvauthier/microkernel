@@ -14,13 +14,9 @@
 
 .section .bss, "aw", @nobits
 # Pile initiale
-.global tss_stack_top
 .align 16
-stack_bottom:
 .skip 16384 # 16 KiB
 stack_top:
-.skip 16384
-tss_stack_top:
 
 .align 4096
 boot_page_directory:
@@ -32,25 +28,28 @@ boot_page_table1:
 .global _start
 .type _start, @function
 _start:
+	movl $(stack_top - 0xC0000000), %esp
+	push %eax
+	push %ebx
 
 # Mise en place du paging - code pris de l'article "Higher Half Bare Bones sur OSDev"
-	movl $(boot_page_table1 - 0xC0000000), %edi
-	movl $0, %esi
-	movl $1023, %ecx
+	mov $(boot_page_table1 - 0xC0000000), %edi
+	mov $0, %esi
+	mov $1023, %ecx
 
 .loop:
-	cmpl $(_kernel_start - 0xC0000000), %esi
+	cmp $(_kernel_start - 0xC0000000), %esi
 	jl .loop_inc
-	cmpl $(_kernel_end - 0xC0000000), %esi
+	cmp $(_kernel_end - 0xC0000000), %esi
 	jge .loop_end
 
-	movl %esi, %edx
-	orl $0x003, %edx
-	movl %edx, (%edi)
+	mov %esi, %edx
+	or $0x003, %edx
+	mov %edx, (%edi)
 
 .loop_inc:
-	addl $4096, %esi
-	addl $4, %edi
+	add $4096, %esi
+	add $4, %edi
 	loop .loop
 
 .loop_end:
@@ -60,12 +59,12 @@ _start:
 	movl $(boot_page_table1 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 768 * 4
 	movl $(boot_page_directory - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 1023 * 4
 
-	movl $(boot_page_directory - 0xC0000000), %ecx
-	movl %ecx, %cr3
+	mov $(boot_page_directory - 0xC0000000), %ecx
+	mov %ecx, %cr3
 
-	movl %cr0, %ecx
-	orl $0x80010000, %ecx
-	movl %ecx, %cr0
+	mov %cr0, %ecx
+	or $0x80010000, %ecx
+	mov %ecx, %cr0
 
 	lea 1f, %ecx
 	jmp *%ecx
@@ -73,10 +72,10 @@ _start:
 	
 	movl $0, boot_page_directory + 0
 
-	movl %cr3, %ecx
-	movl %ecx, %cr3
+	mov %cr3, %ecx
+	mov %ecx, %cr3
 	
-	movl $stack_top, %esp
+	add $0xC0000000, %esp
 
 	call _init
 	call kernel_main

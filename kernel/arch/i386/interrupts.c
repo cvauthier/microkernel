@@ -2,9 +2,7 @@
 #include <stdio.h>
 
 #include "interrupts.h"
-
-extern void load_idt(uint64_t *ptr);
-extern void outb(uint16_t port, uint8_t val);
+#include "memory_i386.h"
 
 extern int except0();
 extern int except1();
@@ -25,6 +23,7 @@ extern int except16();
 extern int except17();
 extern int except18();
 extern int except19();
+extern int inter128();
 extern int irq0();
 extern int irq1();
 extern int irq2();
@@ -42,8 +41,9 @@ extern int irq13();
 extern int irq14();
 extern int irq15();
 
+void clock_tick();
+
 uint64_t kernel_idt[256];
-int xkcd;
 
 void add_idt_descriptor(uint8_t *target, uint32_t base, uint16_t selector, uint8_t type)
 {
@@ -73,8 +73,8 @@ void interrupts_setup()
 	outb(0x21, 0);
 	outb(0xA1, 0);
 
-	// Seulement le clavier
-	outb(0x21, 0xFD);
+	// Clavier + PIT
+	outb(0x21, 0xFC);
 	outb(0xA1, 0xFF);
 
 	uint8_t *p = (uint8_t*) (kernel_idt+32);
@@ -114,8 +114,9 @@ void interrupts_setup()
 	add_idt_descriptor(p+136 , (uint32_t)except17, 0x08, IDT_PRESENT | IDT_DPL_0 | IDT_INT_GATE); 
 	add_idt_descriptor(p+144 , (uint32_t)except18, 0x08, IDT_PRESENT | IDT_DPL_0 | IDT_INT_GATE); 
 	add_idt_descriptor(p+152 , (uint32_t)except19, 0x08, IDT_PRESENT | IDT_DPL_0 | IDT_INT_GATE); 
+	
+	add_idt_descriptor(p+1024 , (uint32_t)inter128, 0x08, IDT_PRESENT | IDT_DPL_0 | IDT_INT_GATE); 
 
-	xkcd = 0;
 	load_idt(kernel_idt);
 }
 
@@ -129,14 +130,22 @@ void default_handler()
 
 void irq_handler(int num)
 {
-	if (num == 1)
+	if (num >= 8)
+		outb(0xA0, 0x20);
+	outb(0x20, 0x20); // EOI
+
+	if (num == 0)
+	{
+		clock_tick();
+	}
+	else if (num == 1)
 	{
 		unsigned char scancode = inb(0x60);
 		printf("Received scancode %d\n", (int) scancode);
 	}
-
-	if (num >= 8)
-		outb(0xA0, 0x20);
-	outb(0x20, 0x20); // EOI
+	else
+	{
+		printf("Received IRQ %d", num);
+	}
 }
 

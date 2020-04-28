@@ -33,4 +33,5 @@ SECTIONS
 	}
 
 	_kernel_end = .;
+	_4M_aligned_after_kernel_end = 0xC0400000;
 }

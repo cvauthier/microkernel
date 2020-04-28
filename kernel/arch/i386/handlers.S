@@ -19,6 +19,7 @@
 .globl except17
 .globl except18
 .globl except19
+.globl inter128
 .globl irq0
 .globl irq1
 .globl irq2
@@ -37,142 +38,152 @@
 .globl irq15
 
 except0:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except1:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except2:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except3:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except4:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except5:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except6:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except7:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except8:
+	cli
 	add $4,%esp
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except9:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except10:
+	cli
 	add $4,%esp
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except11:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except12:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except13:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except14:
+	cli
 	add $4,%esp
 	pushal
-	cld
 	call page_fault_handler
 	popal
 	iret
 
 except16:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except17:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except18:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
 except19:
+	cli
 	pushal
-	cld
 	call default_handler
 	popal
 	iret
 
+inter128:
+	cli
+	pushal
+	push 12(%esp) # esp juste avant le pushal
+	call syscall_handler
+	pop %eax
+	popal
+	iret
+
 irq0:
+	cli
 	pushal
 	mov $0, %eax
 	push %eax
@@ -182,6 +193,7 @@ irq0:
 	iret
 
 irq1:
+	cli
 	pushal
 	mov $1, %eax
 	push %eax
@@ -191,6 +203,7 @@ irq1:
 	iret
 
 irq2:
+	cli
 	pushal
 	mov $2, %eax
 	push %eax
@@ -200,6 +213,7 @@ irq2:
 	iret
 
 irq3:
+	cli
 	pushal
 	mov $3, %eax
 	push %eax
@@ -209,6 +223,7 @@ irq3:
 	iret
 
 irq4:
+	cli
 	pushal
 	mov $4, %eax
 	push %eax
@@ -218,6 +233,7 @@ irq4:
 	iret
 
 irq5:
+	cli
 	pushal
 	mov $5, %eax
 	push %eax
@@ -227,6 +243,7 @@ irq5:
 	iret
 
 irq6:
+	cli
 	pushal
 	mov $6, %eax
 	push %eax
@@ -236,6 +253,7 @@ irq6:
 	iret
 
 irq7:
+	cli
 	pushal
 	mov $7, %eax
 	push %eax
@@ -245,6 +263,7 @@ irq7:
 	iret
 
 irq8:
+	cli
 	pushal
 	mov $8, %eax
 	push %eax
@@ -254,6 +273,7 @@ irq8:
 	iret
 
 irq9:
+	cli
 	pushal
 	mov $9, %eax
 	push %eax
@@ -263,6 +283,7 @@ irq9:
 	iret
 
 irq10:
+	cli
 	pushal
 	mov $10, %eax
 	push %eax
@@ -272,6 +293,7 @@ irq10:
 	iret
 
 irq11:
+	cli
 	pushal
 	mov $11, %eax
 	push %eax
@@ -281,6 +303,7 @@ irq11:
 	iret
 
 irq12:
+	cli
 	pushal
 	mov $12, %eax
 	push %eax
@@ -290,6 +313,7 @@ irq12:
 	iret
 
 irq13:
+	cli
 	pushal
 	mov $13, %eax
 	push %eax
@@ -299,6 +323,7 @@ irq13:
 	iret
 
 irq14:
+	cli
 	pushal
 	mov $14, %eax
 	push %eax
@@ -308,6 +333,7 @@ irq14:
 	iret
 
 irq15:
+	cli
 	pushal
 	mov $15, %eax
 	push %eax

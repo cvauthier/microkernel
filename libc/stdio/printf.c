@@ -65,6 +65,7 @@ int printf(const char* restrict format, ...) {
 		} else if (*format == 'd') { 
 			format++;
 			int32_t x = va_arg(parameters, int32_t);
+			int n = 0;
 			int32_t y = 0;
 			char c;
 
@@ -81,6 +82,7 @@ int printf(const char* restrict format, ...) {
 			{
 				y = 10*y+x%10;
 				x /= 10;
+				n++;
 			}
 			c = '0';
 			if (!y)
@@ -91,7 +93,7 @@ int printf(const char* restrict format, ...) {
 			}
 			else
 			{
-				while (y)
+				for (int i = 0 ; i < n ; i++)
 				{
 					c = (char) ('0'+y%10);
 					y /= 10;
