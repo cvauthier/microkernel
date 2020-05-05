@@ -3,6 +3,11 @@
 .globl wait # int wait(int *pid, int *code)
 .globl fork # int fork()
 .globl exit # void exit(int code)
+.globl open # int open(const char *path)
+.globl close # void close(int fd)
+.globl write # size_t write(int fd, void *ptr, size_t count)
+.globl read # size_t read(int fd, void *buffer, size_t count)
+.globl seek # uint32_t seek(int fd, int32_t pos, int flag)
 
 wait:
 	push %ebp
@@ -29,4 +34,49 @@ exit:
 	mov $2, %eax
 	int $0x80
 
+open:
+	push %ebx
+	mov $3, %eax
+	mov 8(%esp), %ebx
+	int $0x80
+	pop %ebx
+	ret
+
+close:
+	push %ebx
+	mov $4, %eax
+	mov 8(%esp), %ebx
+	int $0x80
+	pop %ebx
+	ret
+
+read:
+	push %ebx
+	mov $5, %eax
+	mov 8(%esp), %ebx
+	mov 12(%esp), %ecx
+	mov 16(%esp), %edx
+	int $0x80
+	pop %ebx
+	ret
+
+write:
+	push %ebx
+	mov $6, %eax
+	mov 8(%esp), %ebx
+	mov 12(%esp), %ecx
+	mov 16(%esp), %edx
+	int $0x80
+	pop %ebx
+	ret
+
+seek:
+	push %ebx
+	mov $7, %eax
+	mov 8(%esp), %ebx
+	mov 12(%esp), %ecx
+	mov 16(%esp), %edx
+	int $0x80
+	pop %ebx
+	ret
 

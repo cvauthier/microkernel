@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #if defined(__is_libk)
 #include <kernel/memory.h>
@@ -7,6 +8,15 @@
 static uint32_t *kernel_heap_begin = 0;
 static uint32_t *kernel_heap_end = 0;
 #endif
+
+void *calloc(size_t num, size_t size)
+{
+	size *= num;
+	char *res = (char*) malloc(size);
+	for (size_t i = 0 ; i < size ; i++)
+		res[i] = 0;
+	return (void*) res;
+}
 
 /* Block structure : 
 	4-byte header (size (multiple of 4), allocated(1)/free(0) flag

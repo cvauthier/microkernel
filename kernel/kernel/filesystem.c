@@ -47,11 +47,11 @@ uint32_t rd_alloc_block()
 
 uint32_t rd_find_in_dir(uint32_t dir_inode, const char *name)
 {
-	file_descr_t *dir = open_inode(dir_inode);
+	file_descr_t *dir = open_inode_rd(dir_inode);
 	uint32_t res = 0;
 
 	char buffer[32];
-	while (read_fd(dir, (void*)buffer, 32) > 0)
+	while (read_rd(dir, (void*)buffer, 32) > 0)
 	{
 		uint32_t ino = read_bigendian_int(buffer+28);
 		buffer[28] = 0;
@@ -62,11 +62,11 @@ uint32_t rd_find_in_dir(uint32_t dir_inode, const char *name)
 		}
 	}
 
-	close_fd(dir);
+	close_rd(dir);
 	return res;
 }
 
-file_descr_t *open_inode(uint32_t inode)
+file_descr_t *open_inode_rd(uint32_t inode)
 {
 	if (inode > nb_inodes)
 		return 0;
@@ -80,10 +80,14 @@ file_descr_t *open_inode(uint32_t inode)
 	file_descr_t *fd = (file_descr_t*) calloc(1, sizeof(file_descr_t));
 	fd->inode = inode;
 	fd->size = read_bigendian_int(ramdisk+ofs+8);
+	fd->read = read_rd;
+	fd->write = write_rd;
+	fd->seek = seek_rd;
+	fd->close = close_rd;
 	return fd;
 }
 
-file_descr_t *open_fd(const char *path)
+file_descr_t *open_rd(const char *path)
 {
 	if (path[0] != '/')
 		return 0;
@@ -94,28 +98,31 @@ file_descr_t *open_fd(const char *path)
 	while (subpath)
 	{
 		int name_len = subpath-path-1;
-		char *name = (char*) calloc(name_len+1, sizeof(char));
-		strncpy(name, path+1, name_len);
+		if (name_len)
+		{
+			char *name = (char*) calloc(name_len+1, sizeof(char));
+			strncpy(name, path+1, name_len);
 	
-		cur_dir_ino = rd_find_in_dir(cur_dir_ino, name);
-		if (!cur_dir_ino)
-			return 0;
+			cur_dir_ino = rd_find_in_dir(cur_dir_ino, name);
+			if (!cur_dir_ino)
+				return 0;
 		
-		free(name);
+			free(name);
+		}
 		path = subpath;
 		subpath = strchr(path+1,'/');
 	}
 
 	uint32_t ino = rd_find_in_dir(cur_dir_ino, path+1);
-	return ino ? open_inode(ino) : 0;
+	return ino ? open_inode_rd(ino) : 0;
 }
 
-void close_fd(file_descr_t *fd)
+void close_rd(file_descr_t *fd)
 {
 	free(fd);
 }
 
-size_t read_fd(file_descr_t *fd, void *ptr, size_t count)
+size_t read_rd(file_descr_t *fd, void *ptr, size_t count)
 {
 	uint32_t main_ofs = fd->inode*block_size + 12 + 4*(fd->pos/block_size);
 	uint32_t block_ofs = read_bigendian_int(ramdisk+main_ofs)*block_size + fd->pos%block_size;
@@ -148,7 +155,7 @@ size_t read_fd(file_descr_t *fd, void *ptr, size_t count)
 	return count0;
 }
 
-size_t write_fd(file_descr_t *fd, void *ptr, size_t count)
+size_t write_rd(file_descr_t *fd, void *ptr, size_t count)
 {
 	uint32_t main_ofs = fd->inode*block_size + 12 + fd->pos/block_size;
 	uint32_t block_ofs = read_bigendian_int(ramdisk+main_ofs)*block_size + fd->pos%block_size;
@@ -209,7 +216,7 @@ size_t write_fd(file_descr_t *fd, void *ptr, size_t count)
 	return count0;
 }
 
-uint32_t seek_fd(file_descr_t *fd, int32_t ofs, int flag)
+uint32_t seek_rd(file_descr_t *fd, int32_t ofs, int flag)
 {
 	if (!fd->size)
 		return fd->pos;

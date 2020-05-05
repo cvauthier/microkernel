@@ -24,18 +24,24 @@ struct file_descr_t
 	uint32_t inode;
 	uint32_t pos;
 	uint32_t size;
+	int owners;
 	uint8_t flags;
+
+	size_t (*read)(struct file_descr_t*,void*,size_t);
+	size_t (*write)(struct file_descr_t*,void*,size_t);
+	uint32_t (*seek)(struct file_descr_t*,int32_t,int);
+	void (*close)(struct file_descr_t*);
 };
 typedef struct file_descr_t file_descr_t;
 
 void rd_update_superblock();
 
-file_descr_t *open_inode(uint32_t inode);
-file_descr_t *open_fd(const char *path);
-void close_fd(file_descr_t *fd);
+file_descr_t *open_inode_rd(uint32_t inode);
+file_descr_t *open_rd(const char *path);
+void close_rd(file_descr_t *fd);
 
-size_t read_fd(file_descr_t *fd, void *ptr, size_t count);
-size_t write_fd(file_descr_t *fd, void *ptr, size_t count);
-uint32_t seek_fd(file_descr_t *fd, int32_t ofs, int flag);
+size_t read_rd(file_descr_t *fd, void *ptr, size_t count);
+size_t write_rd(file_descr_t *fd, void *ptr, size_t count);
+uint32_t seek_rd(file_descr_t *fd, int32_t ofs, int flag);
 
 #endif

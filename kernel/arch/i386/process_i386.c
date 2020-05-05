@@ -1,10 +1,34 @@
 #include <kernel/process.h>
+#include <kernel/filesystem.h>
 
 #include <stdlib.h>
 #include <string.h>
 
 #include "memory_i386.h"
 #include "process_i386.h"
+
+void free_userspace(proc_data_t *proc)
+{
+	uint32_t *pd_temp = &temp_page_1;
+	add_pt_entry(pd_temp, proc->pd_physical_addr);
+	tlb_flush();
+	for (int i = 0 ; i < 768 ; i++)
+	{
+		if (!(pd_temp[i] & 1))
+			continue;
+		
+		uint32_t *pt_temp = &temp_page_2;
+		add_pt_entry(pt_temp, pd_temp[i] & 0xFFFFF000);
+		tlb_flush();
+
+		for (int j = 0 ; j < 1024 ; j++)
+		{
+			if (pt_temp[j] & 1)
+				free_physical_page(pt_temp[j] & 0xFFFFF000);
+		}
+		free_physical_page(pd_temp[i] & 0xFFFFF000);
+	}
+}
 
 proc_data_t *new_proc_data()
 {
@@ -37,8 +61,10 @@ void kernel_proc(int (*start)(void*), void *arg)
 
 	proc_list[pid] = (process_t*) malloc(sizeof(process_t));
 	proc_list[pid]->parent_pid = (cur_pid == -1) ? pid : cur_pid;
+
 	proc_list[pid]->priority =	0;
 	proc_list[pid]->state = Runnable;
+	proc_list[pid]->files = create_dynarray();
 	proc_list[pid]->arch_data = proc;
 
 	proc->eip = (uint32_t) kernel_proc_start;
@@ -108,25 +134,7 @@ proc_data_t *fork_proc_data(proc_data_t *src)
 
 void free_proc_data(proc_data_t *proc)
 {
-	uint32_t *pd_temp = &temp_page_1;
-	add_pt_entry(pd_temp, proc->pd_physical_addr);
-	tlb_flush();
-	for (int i = 0 ; i < 768 ; i++)
-	{
-		if (!(pd_temp[i] & 1))
-			continue;
-		
-		uint32_t *pt_temp = &temp_page_2;
-		add_pt_entry(pt_temp, pd_temp[i] & 0xFFFFF000);
-		tlb_flush();
-
-		for (int j = 0 ; j < 1024 ; j++)
-		{
-			if (pt_temp[j] & 1)
-				free_physical_page(pt_temp[j] & 0xFFFFF000);
-		}
-		free_physical_page(pd_temp[i] & 0xFFFFF000);
-	}
+	free_userspace(proc);
 	free_physical_page(proc->pd_physical_addr);
 	
 	free(((void*)proc->kernel_stack_addr)-KERNEL_STACK_SIZE);
@@ -138,10 +146,11 @@ void syscall_handler(uint32_t *regs)
 	int *eax = (int*) (regs+PUSHA_EAX);
 	int *ebx = (int*) (regs+PUSHA_EBX);
 	int *ecx = (int*) (regs+PUSHA_ECX);
+	int *edx = (int*) (regs+PUSHA_EDX);
 
 	switch (*eax)
 	{
-		case Wait:
+		case Syscall_Wait:
 			*eax = syscall_wait(ebx, ecx);
 			while (*eax < 0)
 			{
@@ -149,12 +158,27 @@ void syscall_handler(uint32_t *regs)
 				*eax = syscall_wait(ebx, ecx);
 			}
 			break;
-		case Fork:
+		case Syscall_Fork:
 			*eax = syscall_fork();
 			break;
-		case Exit:
+		case Syscall_Exit:
 			syscall_exit(*ebx);
 			reschedule();
+			break;
+		case Syscall_Open:
+			*eax = syscall_open((const char*) *ebx);
+			break;
+		case Syscall_Write:
+			*((size_t*)eax) = syscall_write(*ebx, (void*) *ecx, *edx);
+			break;
+		case Syscall_Read:
+			*((size_t*)eax) = syscall_read(*ebx, (void*) *ecx, *edx);
+			break;
+		case Syscall_Seek:
+			*((uint32_t*)eax) = syscall_seek(*ebx, *ecx, *edx);
+			break;
+		case Syscall_Close:
+			syscall_close(*ebx);
 			break;
 		default:
 			*eax = -1;
@@ -189,4 +213,12 @@ void reschedule()
 		switch_proc(proc_list[prev_pid]->arch_data, next);
 }
 
+void syscall_exec(const char *path)
+{
+	file_descr_t *fd = open_rd(path);
+	if (!fd)
+		return;
+	
+	/* TODO : parse ELF */
+}
 

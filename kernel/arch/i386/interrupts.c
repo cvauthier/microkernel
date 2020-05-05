@@ -1,6 +1,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <kernel/keyboard.h>
+
 #include "interrupts.h"
 #include "memory_i386.h"
 
@@ -140,8 +142,7 @@ void irq_handler(int num)
 	}
 	else if (num == 1)
 	{
-		unsigned char scancode = inb(0x60);
-		printf("Received scancode %d\n", (int) scancode);
+		kb_receive_scancode((uint8_t) inb(0x60));
 	}
 	else
 	{
