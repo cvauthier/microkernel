@@ -5,8 +5,8 @@
 .globl exit # void exit(int code)
 .globl open # int open(const char *path)
 .globl close # void close(int fd)
-.globl write # size_t write(int fd, void *ptr, size_t count)
-.globl read # size_t read(int fd, void *buffer, size_t count)
+.globl write # ssize_t write(int fd, void *ptr, size_t count)
+.globl read # ssize_t read(int fd, void *buffer, size_t count)
 .globl seek # uint32_t seek(int fd, int32_t pos, int flag)
 
 wait:

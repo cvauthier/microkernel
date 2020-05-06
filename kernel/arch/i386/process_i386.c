@@ -169,13 +169,13 @@ void syscall_handler(uint32_t *regs)
 			*eax = syscall_open((const char*) *ebx);
 			break;
 		case Syscall_Write:
-			*((size_t*)eax) = syscall_write(*ebx, (void*) *ecx, *edx);
+			*((int32_t*)eax) = syscall_write(*ebx, (void*) *ecx, *((int32_t*)edx));
 			break;
 		case Syscall_Read:
-			*((size_t*)eax) = syscall_read(*ebx, (void*) *ecx, *edx);
+			*((int32_t*)eax) = syscall_read(*ebx, (void*) *ecx, *((int32_t*)edx));
 			break;
 		case Syscall_Seek:
-			*((uint32_t*)eax) = syscall_seek(*ebx, *ecx, *edx);
+			*((uint32_t*)eax) = syscall_seek(*ebx, *((int32_t*)ecx), *edx);
 			break;
 		case Syscall_Close:
 			syscall_close(*ebx);

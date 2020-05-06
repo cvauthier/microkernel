@@ -17,8 +17,8 @@ void terminal_init(); // Nécessite un gestionnaire de mémoire
 file_descr_t *new_terminal();
 file_descr_t *current_terminal();
 
-size_t term_obj_write(file_descr_t *fd, void *ptr, size_t count);
-size_t term_obj_read(file_descr_t *fd, void *ptr, size_t count);
+int32_t term_obj_write(file_descr_t *fd, void *ptr, int32_t count);
+int32_t term_obj_read(file_descr_t *fd, void *ptr, int32_t count);
 void term_obj_close(file_descr_t *fd);
 
 void terminal_kb_event(kb_event_t evt);

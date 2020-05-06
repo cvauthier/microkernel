@@ -57,8 +57,8 @@ int syscall_wait(int *pid, int *code); // Renvoie le PID à récupérer (négati
 int syscall_fork(); // Renvoie le PID du processus fils (négatif en cas d'échec)
 void syscall_exit(int code);
 int syscall_open(const char *path);
-size_t syscall_write(int fd, void *ptr, size_t count);
-size_t syscall_read(int fd, void *ptr, size_t count);
+int32_t syscall_write(int fd, void *ptr, int32_t count);
+int32_t syscall_read(int fd, void *ptr, int32_t count);
 uint32_t syscall_seek(int fd, int32_t ofs, int flag);
 void syscall_close(int fd);
 

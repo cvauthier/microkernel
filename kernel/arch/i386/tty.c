@@ -259,28 +259,34 @@ file_descr_t *new_terminal()
 	return fd;
 }
 
-size_t term_obj_write(file_descr_t *fd, void *ptr, size_t count)
+int32_t term_obj_write(file_descr_t *fd, void *ptr, int32_t count)
 {
+	if (count <= 0)
+		return 0;
+
 	term_obj_t *term = term_stack->array[fd->inode];
 	char *buffer = (char*) ptr;
+	int32_t count0 = count;
 
-	while (count)
+	while (count--)
 	{
 		term_push_char(term, *(buffer++));
-		count--;
 	}
 	term->begin_typed = term->begin_typing = term->pos;
 	term_obj_draw(term);
 
-	return 0;
+	return count0;
 }
 
-size_t term_obj_read(file_descr_t *fd, void *ptr, size_t count)
+int32_t term_obj_read(file_descr_t *fd, void *ptr, int32_t count)
 {
+	if (count <= 0)
+		return 0;
+
 	term_obj_t *term = term_stack->array[fd->inode];
 	char *buffer = (char*) ptr;
 
-	size_t count0 = count;
+	int32_t count0 = count;
 	while (count)
 	{
 		if (term->begin_typed == term->begin_typing)

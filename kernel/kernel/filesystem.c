@@ -122,14 +122,17 @@ void close_rd(file_descr_t *fd)
 	free(fd);
 }
 
-size_t read_rd(file_descr_t *fd, void *ptr, size_t count)
+int32_t read_rd(file_descr_t *fd, void *ptr, int32_t count)
 {
+	if (count <= 0)
+		return 0;
+
 	uint32_t main_ofs = fd->inode*block_size + 12 + 4*(fd->pos/block_size);
 	uint32_t block_ofs = read_bigendian_int(ramdisk+main_ofs)*block_size + fd->pos%block_size;
 	uint32_t next_pos = (fd->pos/block_size+1)*block_size;
 
 	uint8_t *buffer = (uint8_t*) ptr;
-	size_t count0 = count;
+	int32_t count0 = count;
 
 	while (count)
 	{
@@ -155,14 +158,17 @@ size_t read_rd(file_descr_t *fd, void *ptr, size_t count)
 	return count0;
 }
 
-size_t write_rd(file_descr_t *fd, void *ptr, size_t count)
+int32_t write_rd(file_descr_t *fd, void *ptr, int32_t count)
 {
+	if (count <= 0)
+		return 0;
+
 	uint32_t main_ofs = fd->inode*block_size + 12 + fd->pos/block_size;
 	uint32_t block_ofs = read_bigendian_int(ramdisk+main_ofs)*block_size + fd->pos%block_size;
 	uint32_t next_pos = (fd->pos+block_size)/block_size*block_size;
 
 	uint8_t *buffer = (uint8_t*) ptr;
-	size_t count0 = count;
+	int32_t count0 = count;
 
 	if (fd->size-fd->pos < count)
 	{

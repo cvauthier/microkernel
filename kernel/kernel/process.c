@@ -132,7 +132,7 @@ int syscall_open(const char *path)
 	return proc_list[cur_pid]->files->size-1;
 }
 
-size_t syscall_write(int fd, void *ptr, size_t count)
+int32_t syscall_write(int fd, void *ptr, int32_t count)
 {
 	process_t *p = proc_list[cur_pid];
 	file_descr_t *f;
@@ -141,7 +141,7 @@ size_t syscall_write(int fd, void *ptr, size_t count)
 	return f->write(f, ptr, count);
 }
 
-size_t syscall_read(int fd, void *ptr, size_t count)
+int32_t syscall_read(int fd, void *ptr, int32_t count)
 {
 	process_t *p = proc_list[cur_pid];
 	file_descr_t *f;
