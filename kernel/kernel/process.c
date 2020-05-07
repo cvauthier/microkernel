@@ -2,6 +2,23 @@
 
 #include <stdlib.h>
 
+static queue_t *process_queues[MAX_PRIORITY+1];
+
+void scheduler_init()
+{
+	cur_pid = -1;
+	for (int i = 0 ; i <= MAX_PRIORITY ; i++)
+		process_queues[i] = create_queue();
+}
+
+void make_runnable(int pid)
+{
+	proc_list[pid]->state = Runnable;
+
+	int p = proc_list[pid]->priority;
+	queue_push(process_queues[p], (void*) pid);
+}
+
 void free_proc(process_t *proc)
 {
 	free_proc_data(proc->arch_data);
@@ -33,19 +50,31 @@ int new_pid()
 
 void schedule()
 {
-	int i = (cur_pid+1)%NB_MAX_PROC;
-	while (i != cur_pid)
+	for (int i = MAX_PRIORITY ; i >= 0 ; i--)
 	{
-		if (proc_list[i] != 0 && proc_list[i]->state == Runnable)
+		queue_t *q = process_queues[i];
+		int pid = -1;
+
+		while (!queue_empty(q))
 		{
-			proc_list[i]->ms_left = DEFAULT_TIME; 
-			cur_pid = i;
+			pid = (int) queue_first(q);
+			if (proc_list[pid] && proc_list[pid]->state == Runnable)
+				break;
+			queue_pop(q);
+		}
+
+		if (!queue_empty(q))
+		{
+			cur_pid = pid;
+			proc_list[pid]->ms_left = DEFAULT_TIME;
+			queue_pop(q);
+			queue_push(q, (void*) pid);
 			return;
 		}
-		i++;
-		if (i >= NB_MAX_PROC)
-			i = 0;
 	}
+
+	proc_list[IDLE_PID]->ms_left = DEFAULT_TIME;
+	cur_pid = IDLE_PID;
 }
 
 int syscall_wait(int *pid, int *code)
@@ -99,6 +128,8 @@ int syscall_fork()
 		dynarray_push(proc_list[child_pid]->files, fd);
 	}
 
+	make_runnable(child_pid);
+
 	return child_pid;
 }
 
@@ -112,7 +143,7 @@ void syscall_exit(int code)
 		parent = proc_list[cur_pid]->parent_pid = ZOMBIE_SLAYER_PID;
 	
 	if (proc_list[parent]->state == Waiting)
-		proc_list[parent]->state = Runnable;
+		make_runnable(parent);
 }
 
 file_descr_t *access_file(int fd, process_t *p)

@@ -36,7 +36,7 @@ string/memcmp.o \
 string/memcpy.o \
 string/memmove.o \
 string/memset.o \
-string/strlen.o \
+string/string.o \
 
 HOSTEDOBJS=\
 $(ARCH_HOSTEDOBJS) \

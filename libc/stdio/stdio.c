@@ -204,7 +204,10 @@ char *fgets(char *str, int num, FILE *stream)
 	{
 		int ic = fgetc(stream);
 		if (ic < 0)
-			break;
+		{
+			str[i] = 0;
+			return 0;
+		}
 		str[i] = (char) ic;
 		if (ic == '\n')
 		{

@@ -4,6 +4,7 @@ char *strcpy (char *dest, const char *src)
 {
 	while (*src)
 		*(dest++) = *(src++);
+	return dest;
 }
 
 char *strncpy(char *dest, const char *src, size_t num)
@@ -16,6 +17,7 @@ char *strncpy(char *dest, const char *src, size_t num)
 	}
 	while (i < num)
 		dest[i++] = 0;
+	return dest;
 }
 
 const char *strchr(const char *str, int c)

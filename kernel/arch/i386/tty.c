@@ -6,6 +6,7 @@
 
 #include <kernel/tty.h>
 #include <kernel/utility.h>
+#include <kernel/process.h>
 
 #include "vga.h"
 
@@ -25,6 +26,7 @@ static uint16_t* terminal_buffer;
 
 typedef struct
 {
+	dynarray_t *waiting_proc;
 	file_descr_t *fd;
 	char *buffer;
 	char *charsizes;
@@ -233,8 +235,9 @@ file_descr_t *current_terminal()
 	return ((term_obj_t*)term_stack->array[term_stack->size-1])->fd;
 }
 
-void do_nothing()
+uint32_t do_nothing()
 {
+	return 0;
 }
 
 file_descr_t *new_terminal()
@@ -242,6 +245,7 @@ file_descr_t *new_terminal()
 	term_obj_t *term = (term_obj_t*) calloc(1, sizeof(term_obj_t));
 	file_descr_t *fd = (file_descr_t*) calloc(1, sizeof(file_descr_t));
 
+	term->waiting_proc = create_dynarray();
 	term->buffer = (char*) malloc(TERM_BUFF_SIZE*sizeof(char));
 	term->charsizes = (char*) malloc(TERM_BUFF_SIZE*sizeof(char));
 	term->nb_lines = 1;
@@ -284,6 +288,14 @@ int32_t term_obj_read(file_descr_t *fd, void *ptr, int32_t count)
 		return 0;
 
 	term_obj_t *term = term_stack->array[fd->inode];
+	
+	while (term->begin_typed == term->begin_typing)
+	{
+		dynarray_push(term->waiting_proc, (void*) cur_pid);
+		proc_list[cur_pid]->state = WaitingTTY;
+		reschedule();
+	}
+
 	char *buffer = (char*) ptr;
 
 	int32_t count0 = count;
@@ -306,6 +318,7 @@ void term_obj_close(file_descr_t *fd)
 {
 	int i = (int) fd->inode;
 	term_obj_t *term = term_stack->array[i];
+	free_dynarray(term->waiting_proc);
 	free(term->buffer);
 	free(term->charsizes);
 	free(fd);
@@ -372,6 +385,18 @@ void terminal_kb_event(kb_event_t evt)
 				case Kb_Enter:
 					term_push_char(term, '\n');
 					term->begin_typing = term->pos;
+					
+					dynarray_t *w = term->waiting_proc;
+					while (w->size)
+					{
+						int pid = (int) w->array[w->size-1];
+						dynarray_pop(w);
+						if (proc_list[pid] && proc_list[pid]->state == WaitingTTY)
+						{
+							make_runnable(pid);
+							break;
+						}
+					}
 					break;
 				case Kb_Tab:
 					term_push_char(term, '\t');

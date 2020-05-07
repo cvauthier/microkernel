@@ -29,7 +29,7 @@ void syscall_exec(const char *path); // Exécute un fichier elf
 #define IDLE_PID 0
 #define ZOMBIE_SLAYER_PID 1
 
-enum { Runnable, Waiting, Zombie };
+enum { Runnable, Waiting, WaitingTTY, Zombie };
 enum { Syscall_Wait, Syscall_Fork, Syscall_Exit, Syscall_Open, Syscall_Close, Syscall_Read, Syscall_Write, Syscall_Seek };
 
 struct process_t
@@ -48,10 +48,15 @@ process_t *proc_list[NB_MAX_PROC];
 int cur_pid;
 int scheduling_on;
 
+void scheduler_init();
+
+void make_runnable(int pid);
 void free_proc(process_t *proc);
 
 int new_pid();
 void schedule(); // Met à jour cur_pid
+
+// Appels systèmes
 
 int syscall_wait(int *pid, int *code); // Renvoie le PID à récupérer (négatif si le processus est bloqué)
 int syscall_fork(); // Renvoie le PID du processus fils (négatif en cas d'échec)

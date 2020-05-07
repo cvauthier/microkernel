@@ -25,4 +25,18 @@ void dynarray_pop(dynarray_t *arr);
 
 void free_dynarray(dynarray_t *arr);
 
+// File
+
+struct queue_t;
+typedef struct queue_t queue_t;
+
+queue_t *create_queue();
+
+int queue_empty(queue_t *q);
+void *queue_first(queue_t *q);
+void queue_push(queue_t *q, void *elt);
+void *queue_pop(queue_t *q);
+
+void free_queue(queue_t *q);
+
 #endif

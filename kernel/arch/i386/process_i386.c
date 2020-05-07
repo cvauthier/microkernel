@@ -71,6 +71,8 @@ void kernel_proc(int (*start)(void*), void *arg)
 	proc->esp = (uint32_t) (proc->kernel_stack_addr-2);
 	proc->kernel_stack_addr[-1] = (uint32_t) arg;
 	proc->kernel_stack_addr[-2] = (uint32_t) start;
+
+	make_runnable(pid);
 }
 
 proc_data_t *fork_proc_data(proc_data_t *src)

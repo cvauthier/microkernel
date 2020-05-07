@@ -17,6 +17,7 @@ extern void test_main();
 int slayer(__attribute__((unused)) void *unused)
 {
 	int foo, bar;
+
 	while (1)
 		wait(&foo, &bar);
 	return 0;
@@ -29,12 +30,15 @@ int some_task(__attribute__((unused)) void *unused)
 		dynarray_push(proc_list[cur_pid]->files, (void*) term);
 
 	char path[100] = "/usr/include/stdio.h";
-	size_t nbread;
-
+	
 	printf("What file to open ?\n");
 
-	while (!(nbread = term->read(term, path, 99)));
-	path[nbread-1] = 0;
+	if (fgets(path, 100, stdin))
+	{
+		char *c = strchr(path, '\n');
+		if (c)
+			path[c-path] = 0;
+	}
 
 	printf("Trying to open %s...\n",path);
 	
@@ -73,10 +77,8 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic)
 	memory_setup(mbd);
 	init_keyboard();
 	terminal_init();
-
 	clock_init();
-	
-	cur_pid = -1;
+	scheduler_init();	
 
 	kernel_proc(idle, 0);
 	reschedule();
