@@ -8,136 +8,56 @@
 #include "memory_i386.h"
 #include "process_i386.h"
 
-void free_userspace(proc_data_t *proc)
+void prepare_switch(process_t *p)
 {
-	pde_t *pd_temp = (pde_t*) temp_map(proc->pd_physical_addr, 0); 
-	
-	for (int i = 0 ; i < FIRST_KERNEL_PDE ; i++)
-	{
-		if (!pde_present(pd_temp))
-			continue;
-		
-		pte_t *pt_temp = (pte_t*) temp_map(pde_addr(pd_temp), 1);
-
-		for (int j = 0 ; j < NB_PTE ; j++)
-		{
-			if (pte_present(pt_temp))
-				free_physical_page(pte_addr(pt_temp));
-			pt_temp++;
-		}
-		free_physical_page(pde_addr(pd_temp));
-	}
+	load_pd(p->pd_addr);
+	set_tss_stack(p->kernel_stack);
 }
 
-proc_data_t *new_proc_data()
+void context_switch(process_t *prev, process_t *next)
 {
-	proc_data_t *data = (proc_data_t*) malloc(sizeof(proc_data_t));
-	
-	if (!(data->pd_physical_addr = alloc_physical_page()))
-	{
-		free(data);
-		return 0;
-	}
-	
-	data->kernel_stack_addr = (stackint_t*) (malloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE);
-
-	pde_t *pd_data = (pde_t*) temp_map(data->pd_physical_addr, 0);
-
-	memset(pd_data, 0, PD_SIZE);
-	for (int i = FIRST_KERNEL_PDE ; i < NB_PDE-1 ; i++)
-		pd_data[i] = (cur_pd_addr())[i];
-	
-	pd_rec_map(pd_data, data->pd_physical_addr);
-
-	return data;
+	prepare_switch(next);
+	switch_proc(prev->hw_context, next->hw_context);
 }
 
-void kernel_proc(int (*start)(void*), void *arg)
+void first_context_switch(process_t *proc)
 {
-	proc_data_t *proc = new_proc_data();
-	int pid = new_pid();
-
-	proc_list[pid] = (process_t*) malloc(sizeof(process_t));
-	proc_list[pid]->parent_pid = (cur_pid == -1) ? pid : cur_pid;
-
-	proc_list[pid]->priority =	0;
-	proc_list[pid]->state = Runnable;
-	proc_list[pid]->files = create_dynarray();
-	proc_list[pid]->arch_data = proc;
-
-	proc->eip = (uint32_t) kernel_proc_start;
-	proc->esp = (uint32_t) (proc->kernel_stack_addr-2);
-	proc->kernel_stack_addr[-1] = (uint32_t) arg;
-	proc->kernel_stack_addr[-2] = (uint32_t) start;
-
-	make_runnable(pid);
+	prepare_switch(proc);
+	switch_initial(proc->hw_context);
 }
 
-proc_data_t *fork_proc_data(proc_data_t *src)
+void setup_fork_switch(process_t *parent, process_t *child)
 {
-	proc_data_t *dst;
+	/* On suppose ici que child a été créé par un appel à fork par parent alors qu'il s'exécutait en ring 3. 
+		 La pile contient alors dans l'ordre SS, ESP, EFLAGS, CS, EIP, et les 8 registres empilés par PUSHA
+		 
+		 Le processus reprendra à forked_proc_start, qui fait un POPA puis un IRET */
+
+	for (int i = 1 ; i <= 13 ; i++)
+		child->kernel_stack[-i] = parent->kernel_stack[-i];
 	
-	if (!(dst = new_proc_data()))
-		return 0;
-
-	memcpy(((uint8_t*)dst->kernel_stack_addr)-KERNEL_STACK_SIZE, ((uint8_t*)src->kernel_stack_addr)-KERNEL_STACK_SIZE, KERNEL_STACK_SIZE);
-
-	pde_t *pd_src = (pde_t*) temp_map(src->pd_physical_addr, 0);
-	pde_t *pd_dst = (pde_t*) temp_map(dst->pd_physical_addr, 1);
-	memset(pd_dst, 0, PD_SIZE);
-
-	for (int i = 0 ; i < FIRST_KERNEL_PDE ; i++)
-	{
-		if (!pde_present(pd_src))
-			continue;
-
-		paddr_t page = alloc_physical_page();
-		if (!page)
-		{
-			free_proc_data(dst);
-			return 0;
-		}
-
-		*pd_dst = *pd_src;
-		pde_set_addr(pd_dst, page);
-
-		pte_t *pt_src = (pte_t*) temp_map(pde_addr(pd_src), 2);
-		pte_t *pt_dst = (pte_t*) temp_map(page, 3);
-		memset(pt_dst, 0, PT_SIZE);
-
-		for (int j = 0 ; j < NB_PTE ; j++)
-		{
-			if (!pte_present(pt_src))
-				continue;
-
-			page = alloc_physical_page();
-			if (!page)
-			{
-				free_proc_data(dst);
-				return 0;
-			}
-			*pt_dst = *pt_src;
-			pte_set_addr(pt_dst, page);
-			
-			memcpy((void*) temp_map(page, 5), (void*) temp_map(pte_addr(pt_src),4), PAGE_SIZE);
-			pt_src++;
-			pt_dst++;
-		}
-
-		pd_src++;
-		pd_dst++;
-	}
-
-	return dst;
+	child->hw_context->eip = (uint32_t) forked_proc_start;
+	child->hw_context->esp = (uint32_t) (child->kernel_stack-13);
 }
 
-void free_proc_data(proc_data_t *proc)
+void setup_start_point(process_t *proc, int (*start)(void*), void *arg)
 {
-	free_userspace(proc);
-	free_physical_page(proc->pd_physical_addr);
-	
-	free(((void*)proc->kernel_stack_addr)-KERNEL_STACK_SIZE);
-	free(proc);
+	// kernel_proc_start dépile start et arg, et fait syscall_exit(start(arg))
+
+	proc->hw_context->eip = (uint32_t) kernel_proc_start;
+	proc->hw_context->esp = (uint32_t) (proc->kernel_stack-2);
+	proc->kernel_stack[-1] = (uint32_t) arg;
+	proc->kernel_stack[-2] = (uint32_t) start;
+}
+
+hw_context_t *create_hw_context()
+{
+	return (hw_context_t*) calloc(1, sizeof(hw_context_t));
+}
+
+void free_hw_context(hw_context_t *ctx)
+{
+	free(ctx);
 }
 
 void syscall_handler(uint32_t *regs)
@@ -182,34 +102,6 @@ void syscall_handler(uint32_t *regs)
 		default:
 			*eax = -1;
 	}
-}
-
-void scheduler_tick()
-{
- 	if (!scheduling_on)
-		return;
-
-	if (!(--proc_list[cur_pid]->ms_left))
-		reschedule();
-}
-
-void reschedule()
-{
-	int prev_pid = cur_pid;
-	schedule();
-	
-	if (prev_pid == cur_pid)
-		return;
-
-	proc_data_t *next = proc_list[cur_pid]->arch_data;
-
-	load_pd(next->pd_physical_addr);
-	set_tss_stack(next->kernel_stack_addr);
-	
-	if (prev_pid == -1)
-		switch_initial(next);
-	else
-		switch_proc(proc_list[prev_pid]->arch_data, next);
 }
 
 void syscall_exec(const char *path)

@@ -12,22 +12,18 @@
 
 #include <kernel/multiboot.h>
 
-extern void test_main();
+// extern void test_main();
 
-int slayer(__attribute__((unused)) void *unused)
+void install_std_streams()
 {
-	int foo, bar;
-
-	while (1)
-		wait(&foo, &bar);
-	return 0;
+	file_descr_t *term = current_terminal();
+	for (int i = 0 ; i < 3 ; i++)
+		dynarray_push(proc_list[cur_pid]->files, (void*) term);
 }
 
 int some_task(__attribute__((unused)) void *unused)
 {
-	file_descr_t *term = current_terminal();
-	for (int i = 0 ; i < 2 ; i++)
-		dynarray_push(proc_list[cur_pid]->files, (void*) term);
+	install_std_streams();
 
 	char path[100] = "/usr/include/stdio.h";
 	
@@ -60,6 +56,15 @@ int some_task(__attribute__((unused)) void *unused)
 	return 0;
 }
 
+int slayer(__attribute__((unused)) void *unused)
+{
+	int foo, bar;
+
+	while (1)
+		wait(&foo, &bar);
+	return 0;
+}
+
 int idle(__attribute__((unused)) void *unused)
 {
 	scheduling_on = 1;
@@ -81,6 +86,7 @@ void kernel_main(multiboot_info_t* mbd, unsigned int magic)
 	scheduler_init();	
 
 	kernel_proc(idle, 0);
-	reschedule();
+	schedule();
+	first_context_switch(proc_list[cur_pid]);
 }
 

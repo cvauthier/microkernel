@@ -1,25 +1,30 @@
 #ifndef PROC_H
 #define PROC_H
 
+#include <kernel/memory.h>
 #include <kernel/filesystem.h>
 #include <kernel/utility.h>
 
 /* Dépendant de l'architecture, implémenté dans le répertoire arch/ */
 
-struct proc_data_t; // Données dépendant de l'architecture
-typedef struct proc_data_t proc_data_t;
+struct hw_context_t;
+typedef struct hw_context_t hw_context_t;
 
-proc_data_t *fork_proc_data(proc_data_t *src);
-void free_proc_data(proc_data_t *proc);
+struct process_t;
+typedef struct process_t process_t;
 
-void kernel_proc(int (*start)(void*), void *arg);
+void context_switch(process_t *prev, process_t *next);
+void first_context_switch(process_t *proc);
 
-void scheduler_tick();
-void reschedule();
+void setup_fork_switch(process_t *parent, process_t *child);
+void setup_start_point(process_t *proc, int (*start)(void*), void *arg); 
 
-void syscall_exec(const char *path); // Exécute un fichier elf
+hw_context_t *create_hw_context();
+void free_hw_context(hw_context_t *ctx);
 
 /* Indépendant */
+
+#define KERNEL_STACK_SIZE 4096
 
 #define NB_MAX_PROC 64
 #define MAX_PRIORITY 10 // 0 <= p <= 10
@@ -39,24 +44,45 @@ struct process_t
 	int state;
 	int exit_code;
 	int ms_left;
+	
 	dynarray_t *files;
-	proc_data_t *arch_data;
+
+	hw_context_t *hw_context;
+	paddr_t pd_addr;
+	stackint_t *kernel_stack;
+
+	vaddr_t code_begin;
+	vaddr_t code_end;
+	vaddr_t data_begin;
+	vaddr_t data_end;
+	vaddr_t heap_begin;
+	vaddr_t heap_end;
+	vaddr_t stack_top;
+	vaddr_t stack_bottom;
 };
 typedef struct process_t process_t;
+
+int kernel_proc(int (*start)(void*), void *arg);
+
+process_t *new_proc();
+void free_proc_userspace(process_t *proc);
+void free_proc(process_t *proc);
+
+// Ordonnanceur
 
 process_t *proc_list[NB_MAX_PROC];
 int cur_pid;
 int scheduling_on;
 
-void scheduler_init();
-
-void make_runnable(int pid);
-void free_proc(process_t *proc);
-
 int new_pid();
-void schedule(); // Met à jour cur_pid
 
-// Appels systèmes
+void scheduler_init();
+void make_runnable(int pid);
+void schedule(); // Met à jour cur_pid
+void scheduler_tick();
+void reschedule(); // Appelle schedule et change de processus
+
+// Appels systèmer
 
 int syscall_wait(int *pid, int *code); // Renvoie le PID à récupérer (négatif si le processus est bloqué)
 int syscall_fork(); // Renvoie le PID du processus fils (négatif en cas d'échec)
@@ -66,5 +92,6 @@ int32_t syscall_write(int fd, void *ptr, int32_t count);
 int32_t syscall_read(int fd, void *ptr, int32_t count);
 uint32_t syscall_seek(int fd, int32_t ofs, int flag);
 void syscall_close(int fd);
+void syscall_exec(const char *path); // Exécute un fichier elf
 
 #endif

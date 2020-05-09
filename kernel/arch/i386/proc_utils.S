@@ -1,9 +1,9 @@
 .section .text
 .globl jmp_user_proc # void jmp_user_proc(uint32_t *stack)
-.globl switch_proc # void switch(proc_data_t *prev, proc_data_t *next)
-.globl switch_initial # void switch_initial(proc_data_t *init)
+.globl switch_proc # void switch(hw_context_t *prev, hw_context_t *next)
+.globl switch_initial # void switch_initial(hw_context_t *init)
 .globl kernel_proc_start # void kernel_proc_start()
-.globl fork_setup # int fork_setup(proc_data_t *original, proc_data_t *child, int child_pid)
+.globl forked_proc_start # void forked_proc_start();
 
 jmp_user_proc:
 	mov 4(%esp), %esp
@@ -26,10 +26,10 @@ switch_proc:
 	pushal
 	push %ebp
 	lea 1f, %ecx
-	mov %ecx, 8(%eax) 		# 1f -> prev->eip
-	mov %esp, 12(%eax) 		# esp -> prev->esp
-	mov 12(%edx), %esp 		# next->esp -> esp
-	jmp *8(%edx) 					# Saut à next->eip
+	mov %ecx, (%eax) 		# 1f -> prev->eip
+	mov %esp, 4(%eax) 		# esp -> prev->esp
+	mov 4(%edx), %esp 		# next->esp -> esp
+	jmp *(%edx) 					# Saut à next->eip
 1:pop %ebp
 	popal
 	popfl
@@ -39,8 +39,8 @@ switch_proc:
 
 switch_initial:
 	mov 4(%esp), %edx
-	mov 12(%edx), %esp 		# init->esp -> esp
-	jmp *8(%edx) 					# Saut à init->eip
+	mov 4(%edx), %esp 		# init->esp -> esp
+	jmp *(%edx) 					# Saut à init->eip
 
 kernel_proc_start:
 	sti
@@ -48,4 +48,8 @@ kernel_proc_start:
 	call *%eax
 	push %eax
 	call exit
+
+forked_proc_start:
+	popal
+	iret
 

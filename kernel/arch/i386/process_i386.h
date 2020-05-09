@@ -3,8 +3,6 @@
 
 #include <stdint.h>
 
-#define KERNEL_STACK_SIZE 4096
-
 #define PUSHA_EAX -1
 #define PUSHA_ECX -2
 #define PUSHA_EDX -3
@@ -12,31 +10,22 @@
 #define PUSHA_ESI -7
 #define PUSHA_EDI -8
 
-struct __attribute__((__packed__)) proc_data_t
+struct __attribute__((__packed__)) hw_context_t
 {
-	paddr_t pd_physical_addr;
-	stackint_t *kernel_stack_addr;
-	/*uint32_t code_begin;
-	uint32_t code_end;
-	uint32_t heap_begin;
-	uint32_t heap_end;
-	uint32_t stack_top;
-	uint32_t stack_bottom;*/
 	uint32_t eip;
 	uint32_t esp;
 };
-typedef struct proc_data_t proc_data_t;
+typedef struct hw_context_t hw_context_t;
 
-extern void jmp_user_proc(uint32_t *stack);
-extern void switch_proc(proc_data_t *prev, proc_data_t *next);
-extern void switch_initial(proc_data_t *init);
+//extern void jmp_user_proc(uint32_t *stack);
+
+extern void switch_proc(hw_context_t *prev, hw_context_t *next);
+extern void switch_initial(hw_context_t *init);
+
 extern void kernel_proc_start();
-
-proc_data_t *new_proc_data();
+extern void forked_proc_start();
 
 void syscall_handler(uint32_t *regs);
-
-void reschedule();
 
 #endif
 
