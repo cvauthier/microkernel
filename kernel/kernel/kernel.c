@@ -10,7 +10,7 @@
 #include <kernel/filesystem.h>
 #include <kernel/keyboard.h>
 
-#include <multiboot.h>
+#include <kernel/multiboot.h>
 
 extern void test_main();
 

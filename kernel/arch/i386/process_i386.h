@@ -14,8 +14,8 @@
 
 struct __attribute__((__packed__)) proc_data_t
 {
-	uint32_t pd_physical_addr;
-	uint32_t *kernel_stack_addr;
+	paddr_t pd_physical_addr;
+	stackint_t *kernel_stack_addr;
 	/*uint32_t code_begin;
 	uint32_t code_end;
 	uint32_t heap_begin;

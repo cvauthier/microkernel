@@ -2,7 +2,7 @@ DEFAULT_HOST!=../default-host.sh
 HOST?=DEFAULT_HOST
 HOSTARCH!=../target-triplet-to-arch.sh $(HOST)
 
-CFLAGS?=-g
+CFLAGS?=
 CPPFLAGS?=
 LDFLAGS?=
 LIBS?=
@@ -13,8 +13,8 @@ EXEC_PREFIX?=$(PREFIX)
 BOOTDIR?=$(EXEC_PREFIX)/boot
 INCLUDEDIR?=$(PREFIX)/include
 
-CFLAGS:=$(CFLAGS) -ffreestanding -Wall -Wextra
-CPPFLAGS:=$(CPPFLAGS) -D__is_kernel -Iinclude
+CFLAGS:=$(CFLAGS) -g -ffreestanding -Wall -Wextra -D_ARCH_$(HOSTARCH)
+CPPFLAGS:=$(CPPFLAGS) -D__is_kernel -Iinclude -D_ARCH_$(HOSTARCH)
 LDFLAGS:=$(LDFLAGS)
 LIBS:=$(LIBS) -nostdlib -lk -lgcc
 

@@ -20,10 +20,10 @@ temp_page_6:
 .skip 4096
 
 .section .text
-.globl load_gdt # void load_gdt(void *gdt_addr, uint16_t size)
-.globl load_idt # void load_idt(void *idt_addr)
+.globl load_gdt # void load_gdt(vaddr_t gdt_addr, uint16_t size)
+.globl load_idt # void load_idt(vaddr_t idt_addr)
 .globl tss_flush # void tss_flush()
-.globl load_pd # void load_pd(uint32_t pd_physical_addr)
+.globl load_pd # void load_pd(paddr_t pd_addr)
 .globl tlb_flush # void tlb_flush()
 .globl outb # void outb(uint16_t port, uint8_t val)
 .globl inb # uint8_t inb(uint16_t port)

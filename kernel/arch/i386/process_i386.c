@@ -1,5 +1,6 @@
 #include <kernel/process.h>
 #include <kernel/filesystem.h>
+#include <kernel/memory.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -9,24 +10,22 @@
 
 void free_userspace(proc_data_t *proc)
 {
-	uint32_t *pd_temp = &temp_page_1;
-	add_pt_entry(pd_temp, proc->pd_physical_addr);
-	tlb_flush();
-	for (int i = 0 ; i < 768 ; i++)
+	pde_t *pd_temp = (pde_t*) temp_map(proc->pd_physical_addr, 0); 
+	
+	for (int i = 0 ; i < FIRST_KERNEL_PDE ; i++)
 	{
-		if (!(pd_temp[i] & 1))
+		if (!pde_present(pd_temp))
 			continue;
 		
-		uint32_t *pt_temp = &temp_page_2;
-		add_pt_entry(pt_temp, pd_temp[i] & 0xFFFFF000);
-		tlb_flush();
+		pte_t *pt_temp = (pte_t*) temp_map(pde_addr(pd_temp), 1);
 
-		for (int j = 0 ; j < 1024 ; j++)
+		for (int j = 0 ; j < NB_PTE ; j++)
 		{
-			if (pt_temp[j] & 1)
-				free_physical_page(pt_temp[j] & 0xFFFFF000);
+			if (pte_present(pt_temp))
+				free_physical_page(pte_addr(pt_temp));
+			pt_temp++;
 		}
-		free_physical_page(pd_temp[i] & 0xFFFFF000);
+		free_physical_page(pde_addr(pd_temp));
 	}
 }
 
@@ -40,16 +39,15 @@ proc_data_t *new_proc_data()
 		return 0;
 	}
 	
-	data->kernel_stack_addr = (uint32_t*) (malloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE);
-	
-	uint32_t *pd_data = &temp_page_1;
-	add_pt_entry(pd_data, data->pd_physical_addr);
-	tlb_flush();
+	data->kernel_stack_addr = (stackint_t*) (malloc(KERNEL_STACK_SIZE) + KERNEL_STACK_SIZE);
 
-	memset(pd_data, 0, 4096);
-	for (int i = 768 ; i < 1023 ; i++)
-		pd_data[i] = (PD_ADDR)[i];
-	pd_data[1023] = data->pd_physical_addr | 0x3;
+	pde_t *pd_data = (pde_t*) temp_map(data->pd_physical_addr, 0);
+
+	memset(pd_data, 0, PD_SIZE);
+	for (int i = FIRST_KERNEL_PDE ; i < NB_PDE-1 ; i++)
+		pd_data[i] = (cur_pd_addr())[i];
+	
+	pd_rec_map(pd_data, data->pd_physical_addr);
 
 	return data;
 }
@@ -84,34 +82,32 @@ proc_data_t *fork_proc_data(proc_data_t *src)
 
 	memcpy(((uint8_t*)dst->kernel_stack_addr)-KERNEL_STACK_SIZE, ((uint8_t*)src->kernel_stack_addr)-KERNEL_STACK_SIZE, KERNEL_STACK_SIZE);
 
-	uint32_t *pd_src = &temp_page_1;
-	uint32_t *pd_dst = &temp_page_2;
-	add_pt_entry(pd_src, src->pd_physical_addr);
-	add_pt_entry(pd_dst, dst->pd_physical_addr);
-	tlb_flush();
+	pde_t *pd_src = (pde_t*) temp_map(src->pd_physical_addr, 0);
+	pde_t *pd_dst = (pde_t*) temp_map(dst->pd_physical_addr, 1);
+	memset(pd_dst, 0, PD_SIZE);
 
-	for (int i = 0 ; i < 768 ; i++)
+	for (int i = 0 ; i < FIRST_KERNEL_PDE ; i++)
 	{
-		if (!(pd_src[i] & 1))
+		if (!pde_present(pd_src))
 			continue;
-		uint32_t page = alloc_physical_page();
+
+		paddr_t page = alloc_physical_page();
 		if (!page)
 		{
 			free_proc_data(dst);
 			return 0;
 		}
-		pd_dst[i] = (pd_src[i]&0xFFF) | (page & 0xFFFFF000);
 
-		uint32_t *pt_src = &temp_page_3;
-		uint32_t *pt_dst = &temp_page_4;
-		add_pt_entry(pt_src, pd_src[i] & 0xFFFFF000);
-		add_pt_entry(pt_dst, page);
-		tlb_flush();
-		memset(pt_dst, 0, 4096);
+		*pd_dst = *pd_src;
+		pde_set_addr(pd_dst, page);
 
-		for (int j = 0 ; j < 1024 ; j++)
+		pte_t *pt_src = (pte_t*) temp_map(pde_addr(pd_src), 2);
+		pte_t *pt_dst = (pte_t*) temp_map(page, 3);
+		memset(pt_dst, 0, PT_SIZE);
+
+		for (int j = 0 ; j < NB_PTE ; j++)
 		{
-			if (!(pt_src[j] & 1))
+			if (!pte_present(pt_src))
 				continue;
 
 			page = alloc_physical_page();
@@ -120,15 +116,16 @@ proc_data_t *fork_proc_data(proc_data_t *src)
 				free_proc_data(dst);
 				return 0;
 			}
-			pt_dst[j] = (pt_src[j]&0xFFF) | (page & 0xFFFFF000);
+			*pt_dst = *pt_src;
+			pte_set_addr(pt_dst, page);
 			
-			uint32_t *page_src = &temp_page_5;
-			uint32_t *page_dst = &temp_page_6;
-			add_pt_entry(page_src, pt_src[j] & 0xFFFFF000);
-			add_pt_entry(page_dst, page);
-			tlb_flush();
-			memcpy(page_dst, page_src, 4096);
+			memcpy((void*) temp_map(page, 5), (void*) temp_map(pte_addr(pt_src),4), PAGE_SIZE);
+			pt_src++;
+			pt_dst++;
 		}
+
+		pd_src++;
+		pd_dst++;
 	}
 
 	return dst;
