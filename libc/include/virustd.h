@@ -17,11 +17,11 @@ int32_t write(int fd, void *ptr, int32_t count);
 int32_t read(int fd, void *buffer, int32_t count);
 uint32_t seek(int fd, int32_t pos, int flag); 
 
-/*
 void *sbrk(int incr);
-void exec(char *path);
 
-*/
+// void exec(char *path);
+
+
 #ifdef __cplusplus
 }
 #endif

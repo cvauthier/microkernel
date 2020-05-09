@@ -25,6 +25,7 @@ void free_hw_context(hw_context_t *ctx);
 /* Indépendant */
 
 #define KERNEL_STACK_SIZE 4096
+#define MAX_STACK_SIZE (20<<20)
 
 #define NB_MAX_PROC 64
 #define MAX_PRIORITY 10 // 0 <= p <= 10
@@ -35,7 +36,9 @@ void free_hw_context(hw_context_t *ctx);
 #define ZOMBIE_SLAYER_PID 1
 
 enum { Runnable, Waiting, WaitingTTY, Zombie };
-enum { Syscall_Wait, Syscall_Fork, Syscall_Exit, Syscall_Open, Syscall_Close, Syscall_Read, Syscall_Write, Syscall_Seek };
+enum { Syscall_Wait, Syscall_Fork, Syscall_Exit, 
+			 Syscall_Open, Syscall_Close, Syscall_Read, Syscall_Write, Syscall_Seek,
+			 Syscall_Sbrk };
 
 struct process_t
 {
@@ -62,6 +65,9 @@ struct process_t
 };
 typedef struct process_t process_t;
 
+/* L'organisation de l'userspace est plus ou moins celle du "flexible layout" de Linux, sans les régions de mémoire anonymes
+ (code à partir de 0x08048000, data et bss juste après, puis le tas, et la pile à la fin) */
+
 int kernel_proc(int (*start)(void*), void *arg);
 
 process_t *new_proc();
@@ -87,11 +93,15 @@ void reschedule(); // Appelle schedule et change de processus
 int syscall_wait(int *pid, int *code); // Renvoie le PID à récupérer (négatif si le processus est bloqué)
 int syscall_fork(); // Renvoie le PID du processus fils (négatif en cas d'échec)
 void syscall_exit(int code);
+
 int syscall_open(const char *path);
 int32_t syscall_write(int fd, void *ptr, int32_t count);
 int32_t syscall_read(int fd, void *ptr, int32_t count);
 uint32_t syscall_seek(int fd, int32_t ofs, int flag);
 void syscall_close(int fd);
+
+void *syscall_sbrk(int incr);
+
 void syscall_exec(const char *path); // Exécute un fichier elf
 
 #endif

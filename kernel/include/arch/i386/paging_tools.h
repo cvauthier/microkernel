@@ -76,9 +76,14 @@ static inline void pte_set_addr(pte_t *e, paddr_t addr)
 	*e = (*e & 0xFFF) | (addr & 0xFFFFF000);
 }
 
-static inline int pte_present(pte_t *e)
+static inline int pte_is_present(pte_t *e)
 {
 	return *e & 0x1;
+}
+
+static inline void pte_set_present(pte_t *e, int b)
+{
+	*e = (*e & 0xFFFFFFFE) | ((b != 0) ? 1 : 0);
 }
 
 static inline paddr_t pde_addr(pde_t *e)
@@ -91,9 +96,14 @@ static inline void pde_set_addr(pde_t *e, paddr_t addr)
 	*e = (*e & 0xFFF) | (addr & 0xFFFFF000);
 }
 
-static inline int pde_present(pde_t *e)
+static inline int pde_is_present(pde_t *e)
 {
 	return *e & 0x1;
+}
+
+static inline void pde_set_present(pte_t *e, int b)
+{
+	*e = (*e & 0xFFFFFFFE) | ((b != 0) ? 1 : 0);
 }
 
 static inline paddr_t get_paddr(vaddr_t vaddr)

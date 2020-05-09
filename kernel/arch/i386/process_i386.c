@@ -99,6 +99,9 @@ void syscall_handler(uint32_t *regs)
 		case Syscall_Close:
 			syscall_close(*ebx);
 			break;
+		case Syscall_Sbrk:
+			*((void**) eax) = syscall_sbrk(*ebx);
+			break;
 		default:
 			*eax = -1;
 	}

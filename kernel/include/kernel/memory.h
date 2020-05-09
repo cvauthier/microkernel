@@ -63,11 +63,13 @@ inline int pte_can_exec(pte_t *e);
 
 inline paddr_t pte_addr(pte_t *e);
 inline void pte_set_addr(pte_t *e, paddr_t addr);
-inline int pte_present(pte_t *e);
+inline int pte_is_present(pte_t *e);
+inline void pte_set_present(pte_t *e, int b);
 
 inline paddr_t pde_addr(pde_t *e);
 inline void pde_set_addr(pde_t *e, paddr_t addr);
-inline int pde_present(pde_t *e);
+inline int pde_is_present(pde_t *e);
+inline void pde_set_present(pte_t *e, int b);
 
 inline paddr_t get_paddr(vaddr_t vaddr);
 

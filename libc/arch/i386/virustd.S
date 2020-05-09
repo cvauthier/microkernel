@@ -8,6 +8,7 @@
 .globl write # ssize_t write(int fd, void *ptr, size_t count)
 .globl read # ssize_t read(int fd, void *buffer, size_t count)
 .globl seek # uint32_t seek(int fd, int32_t pos, int flag)
+.globl sbrk # void *sbrk(int incr)
 
 wait:
 	push %ebp
@@ -79,4 +80,13 @@ seek:
 	int $0x80
 	pop %ebx
 	ret
+
+sbrk:
+	push %ebx
+	mov $8, %eax
+	mov 8(%esp), %ebx
+	int $0x80
+	pop %ebx
+	ret
+
 
