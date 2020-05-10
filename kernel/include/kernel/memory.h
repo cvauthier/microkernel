@@ -78,8 +78,8 @@ inline void pd_rec_map(pde_t *pd_first, paddr_t pd_addr);
 pde_t *add_pde(pde_t *pd_first, vaddr_t vaddr, paddr_t paddr); // Par défaut avec toutes les autorisations 
 pte_t *add_pte(pte_t *pt_first, vaddr_t vaddr, paddr_t paddr); // Par défaut sans autorisation
 
-void add_page(vaddr_t vaddr, paddr_t paddr);
-void map_page(void *page_addr);
+pte_t *add_page(vaddr_t vaddr, paddr_t paddr);
+pte_t *map_page(void *page_addr);
 
 // Gestion des pages physiques 
 

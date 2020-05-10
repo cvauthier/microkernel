@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <virustd.h>
 
@@ -76,7 +77,7 @@ int idle(__attribute__((unused)) void *unused)
 	return 0;
 }
 
-void kernel_main(multiboot_info_t* mbd, unsigned int magic)
+void kernel_main(multiboot_info_t* mbd, __attribute__((unused)) unsigned int magic)
 {
 	terminal_basic_init();
 	memory_setup(mbd);

@@ -36,23 +36,30 @@ pte_t *add_pte(pte_t *pt_first, vaddr_t vaddr, paddr_t paddr)
 	return e;
 }
 
-void add_page(vaddr_t vaddr, paddr_t paddr)
+pte_t *add_page(vaddr_t vaddr, paddr_t paddr)
 {
 	pde_t *pde = pde_of_addr(cur_pd_addr(), vaddr);
 
 	if (!(*pde & 1))
 	{
-		add_pde(cur_pd_addr(), vaddr, alloc_physical_page());
+		paddr_t p = alloc_physical_page();
+		if (!p)
+			return 0;
+		add_pde(cur_pd_addr(), vaddr, p);
 		memset(cur_pt_addr(vaddr), 0, PT_SIZE);
 	}
 
 	pte_t *pte = pte_of_addr(cur_pt_addr(vaddr), vaddr);
 	*pte = (paddr & 0xFFFFF000) | 0x3;
+	return pte;
 }
 
-void map_page(void *page_addr)
+pte_t *map_page(void *page_addr)
 {
-	add_page((vaddr_t) page_addr, alloc_physical_page());
+	paddr_t p = alloc_physical_page();
+	if (!p)
+		return 0;
+	return add_page((vaddr_t) page_addr, p);
 }
 
 paddr_t alloc_physical_page()
