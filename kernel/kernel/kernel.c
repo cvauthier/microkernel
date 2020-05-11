@@ -26,37 +26,10 @@ int some_task(__attribute__((unused)) void *unused)
 {
 	install_std_streams();
 
-	printf("Trying to execute /bin/a.out...\n");
-	exec("/bin/a.out");
+	printf("Trying to execute /bin/test...\n");
+	exec("/bin/test");
 	printf("Failed\n");
 
-	/*char path[100] = "/usr/include/stdio.h";
-	
-	printf("What file to open ?\n");
-
-	if (fgets(path, 100, stdin))
-	{
-		char *c = strchr(path, '\n');
-		if (c)
-			path[c-path] = 0;
-	}
-
-	printf("Trying to open %s...\n",path);
-	
-	FILE *f = fopen(path, "r");
-	if (!f)
-		printf("Failed\n");
-	else
-	{
-		printf("Success :\n");
-		char buffer[50];
-		for (int i = 0 ; i < 10 ; i++)
-		{
-			fgets(buffer, 50, f);
-			printf("%s", buffer);
-		}
-		printf("\n");
-	}*/
 
 	return 0;
 }
