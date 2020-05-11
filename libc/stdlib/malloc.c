@@ -153,6 +153,12 @@ void init_heap()
 	*((uint32_t*) heap_begin) = *((uint32_t*) (heap_end-4)) = (heap_end-heap_begin) | BLOCK_FREE;
 }
 
+void xkcd()
+{
+	static int dckx = 0;
+	dckx++;
+}
+
 void *malloc(size_t size)
 {
 	if (!size)
@@ -175,6 +181,8 @@ void *malloc(size_t size)
 		if ((cur.flags & BLOCK_FREE) && cur.size >= size)
 		{
 			allocate_block(&cur, size);
+			if ((uint32_t)(cur.addr+cur.size) == 0xc0c052c8)
+				xkcd();
 			return block_content_addr(&cur);
 		}
 	}
@@ -213,6 +221,8 @@ void *malloc(size_t size)
 		return 0;
 	
 	allocate_block(&cur, size);
+	if ((uint32_t)(cur.addr+cur.size) == 0xc0c052c8)
+		xkcd();
 	return block_content_addr(&cur);
 }
 
@@ -238,6 +248,11 @@ void free(void *ptr)
 		next_block(&blk2, &blk);
 		if (blk2.flags & BLOCK_FREE)
 			fuse_with_next(&blk, &blk2);
+		else
+		{
+			blk2.flags |= BLOCK_PREV_FREE;
+			write_block(&blk2);
+		}
 	}
 	if (blk.flags & BLOCK_PREV_FREE)
 	{

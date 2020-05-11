@@ -20,6 +20,7 @@ void install_std_streams()
 	file_descr_t *term = current_terminal();
 	for (int i = 0 ; i < 3 ; i++)
 		dynarray_push(proc_list[cur_pid]->files, (void*) term);
+	term->owners+=3;
 }
 
 int some_task(__attribute__((unused)) void *unused)

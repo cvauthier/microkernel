@@ -10,6 +10,11 @@
 
 void prepare_switch(process_t *p)
 {
+	// Les pages du kernel doivent rester les mêmes d'un processus à l'autre
+	pde_t *pde = (pde_t*) temp_map(p->pd_addr, 0);
+	for (int i = FIRST_KERNEL_PDE ; i < NB_PDE-1 ; i++)
+		pde[i] = (cur_pd_addr())[i];
+
 	load_pd(p->pd_addr);
 	set_tss_stack(p->kernel_stack);
 }
@@ -35,7 +40,8 @@ void setup_fork_switch(process_t *parent, process_t *child)
 
 	for (int i = 1 ; i <= 13 ; i++)
 		child->kernel_stack[-i] = parent->kernel_stack[-i];
-	
+
+	child->kernel_stack[-5+PUSHA_EAX] = 0; // Fork renvoie 0
 	child->hw_context->eip = (uint32_t) forked_proc_start;
 	child->hw_context->esp = (uint32_t) (child->kernel_stack-13);
 }

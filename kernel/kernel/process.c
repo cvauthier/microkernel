@@ -50,7 +50,7 @@ void free_proc_userspace(process_t *proc)
 {
 	pde_t *pd_temp = (pde_t*) temp_map(proc->pd_addr, 0); 
 	
-	for (int i = 0 ; i < FIRST_KERNEL_PDE ; i++)
+	for (int i = 0 ; i < FIRST_KERNEL_PDE ; i++, pd_temp++)
 	{
 		if (!pde_is_present(pd_temp))
 			continue;
@@ -216,7 +216,7 @@ int syscall_fork()
 	pde_t *pd_dst = (pde_t*) temp_map(p->pd_addr, 1);
 	memset(pd_dst, 0, PD_SIZE*FIRST_KERNEL_PDE/NB_PDE);
 
-	for (int i = 0 ; i < FIRST_KERNEL_PDE ; i++)
+	for (int i = 0 ; i < FIRST_KERNEL_PDE ; i++, pd_src++, pd_dst++ )
 	{
 		if (!pde_is_present(pd_src))
 			continue;
@@ -235,7 +235,7 @@ int syscall_fork()
 		pte_t *pt_dst = (pte_t*) temp_map(page, 3);
 		memset(pt_dst, 0, PT_SIZE);
 
-		for (int j = 0 ; j < NB_PTE ; j++)
+		for (int j = 0 ; j < NB_PTE ; j++, pt_src++, pt_dst++)
 		{
 			if (!pte_is_present(pt_src))
 				continue;
@@ -250,12 +250,7 @@ int syscall_fork()
 			pte_set_addr(pt_dst, page);
 			
 			memcpy((void*) temp_map(page, 5), (void*) temp_map(pte_addr(pt_src),4), PAGE_SIZE);
-			pt_src++;
-			pt_dst++;
 		}
-
-		pd_src++;
-		pd_dst++;
 	}
 
 	p->parent_pid = cur_pid;
