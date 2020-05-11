@@ -19,8 +19,7 @@ uint32_t seek(int fd, int32_t pos, int flag);
 
 void *sbrk(int incr);
 
-// void exec(char *path);
-
+void exec(const char *path);
 
 #ifdef __cplusplus
 }

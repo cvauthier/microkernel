@@ -17,7 +17,9 @@ void context_switch(process_t *prev, process_t *next);
 void first_context_switch(process_t *proc);
 
 void setup_fork_switch(process_t *parent, process_t *child);
-void setup_start_point(process_t *proc, int (*start)(void*), void *arg); 
+void setup_start_point(process_t *proc, int (*start)(void*), void *arg);
+
+void jump_to_ring3(void (*start)(), stackint_t *stack);
 
 hw_context_t *create_hw_context();
 void free_hw_context(hw_context_t *ctx);
@@ -38,7 +40,8 @@ void free_hw_context(hw_context_t *ctx);
 enum { Runnable, Waiting, WaitingTTY, Zombie };
 enum { Syscall_Wait, Syscall_Fork, Syscall_Exit, 
 			 Syscall_Open, Syscall_Close, Syscall_Read, Syscall_Write, Syscall_Seek,
-			 Syscall_Sbrk };
+			 Syscall_Sbrk,
+			 Syscall_Exec };
 
 struct process_t
 {

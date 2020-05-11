@@ -82,7 +82,6 @@ void syscall_handler(uint32_t *regs)
 			break;
 		case Syscall_Exit:
 			syscall_exit(*ebx);
-			reschedule();
 			break;
 		case Syscall_Open:
 			*eax = syscall_open((const char*) *ebx);
@@ -102,17 +101,11 @@ void syscall_handler(uint32_t *regs)
 		case Syscall_Sbrk:
 			*((void**) eax) = syscall_sbrk(*ebx);
 			break;
+		case Syscall_Exec:
+			syscall_exec((const char*) *ebx);
+			break;
 		default:
 			*eax = -1;
 	}
-}
-
-void syscall_exec(const char *path)
-{
-	file_descr_t *fd = open_rd(path);
-	if (!fd)
-		return;
-	
-	/* TODO : parse ELF */
 }
 

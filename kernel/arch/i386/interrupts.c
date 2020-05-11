@@ -117,7 +117,7 @@ void interrupts_setup()
 	add_idt_descriptor(p+144 , (uint32_t)except18, 0x08, IDT_PRESENT | IDT_DPL_0 | IDT_INT_GATE); 
 	add_idt_descriptor(p+152 , (uint32_t)except19, 0x08, IDT_PRESENT | IDT_DPL_0 | IDT_INT_GATE); 
 	
-	add_idt_descriptor(p+1024 , (uint32_t)inter128, 0x08, IDT_PRESENT | IDT_DPL_0 | IDT_INT_GATE); 
+	add_idt_descriptor(p+1024 , (uint32_t)inter128, 0x08, IDT_PRESENT | IDT_DPL_3 | IDT_INT_GATE); 
 
 	load_idt(kernel_idt);
 }

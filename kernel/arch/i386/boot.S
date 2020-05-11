@@ -63,7 +63,8 @@ _start:
 	mov %ecx, %cr3
 
 	mov %cr0, %ecx
-	or $0x80010000, %ecx
+	or $0x80000000, %ecx
+#	or $0x80010000, %ecx # Write Protect (même le kernel ne peut pas écrire dans des pages read-only)
 	mov %ecx, %cr0
 
 	lea 1f, %ecx

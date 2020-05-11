@@ -19,6 +19,7 @@ int nb_pages;
 #define NB_PDE 1024
 #define NB_PTE 1024
 #define FIRST_KERNEL_PDE 768
+#define KERNEL_BEGIN 0xC0000000
 
 typedef uint32_t paddr_t; // Adresse physique
 typedef uint32_t vaddr_t; // Adresse virtuelle

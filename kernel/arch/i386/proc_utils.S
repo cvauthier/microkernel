@@ -1,20 +1,27 @@
 .section .text
-.globl jmp_user_proc # void jmp_user_proc(uint32_t *stack)
+.globl jump_to_ring3 # void jump_to_ring3(void (*start)(), stackint_t *stack)
 .globl switch_proc # void switch(hw_context_t *prev, hw_context_t *next)
 .globl switch_initial # void switch_initial(hw_context_t *init)
 .globl kernel_proc_start # void kernel_proc_start()
 .globl forked_proc_start # void forked_proc_start();
 
-jmp_user_proc:
-	mov 4(%esp), %esp
-	popal
-	push %eax
-	mov $0x23, %eax
+jump_to_ring3:
+	cli
+	mov 4(%esp), %ebx # start
+	mov 8(%esp), %ecx # stack
+	push $0x23 # User SS
+	push %ecx  # User stack
+	pushf
+	pop %edx
+	or $0x0200, %edx # On active les interruptions
+	push %edx
+	push $0x1B # User CS
+	push %ebx # EIP à dépiler
+	mov $0x23, %ax
 	mov %ax, %ds
 	mov %ax, %es
 	mov %ax, %fs
 	mov %ax, %gs
-	pop %eax
 	iret
 
 switch_proc:

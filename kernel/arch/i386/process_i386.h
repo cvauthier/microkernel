@@ -17,8 +17,6 @@ struct __attribute__((__packed__)) hw_context_t
 };
 typedef struct hw_context_t hw_context_t;
 
-//extern void jmp_user_proc(uint32_t *stack);
-
 extern void switch_proc(hw_context_t *prev, hw_context_t *next);
 extern void switch_initial(hw_context_t *init);
 

@@ -17,8 +17,8 @@
 #define GDT_AC 0x01
 
 #define TSS_SIZE 104
-#define TSS_SS0 0x08
-#define TSS_ESP0 0x04
+#define TSS_SS0 2
+#define TSS_ESP0 1
 
 #define PD_ADDR ((uint32_t*) 0xFFFFF000)
 #define PT_ADDR(n) ((uint32_t*) (0xFFC00000 | ((n)<<12)))

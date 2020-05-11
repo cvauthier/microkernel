@@ -25,14 +25,14 @@ vaddr_t get_heap_begin()
 pde_t *add_pde(pde_t *pd_first, vaddr_t vaddr, paddr_t paddr)
 {
 	pde_t *e = pde_of_addr(pd_first, vaddr);
-	*e = (paddr & 0xFFFFF000) | 0x3; // Present + ReadWrite
+	*e = (paddr & 0xFFFFF000) | 0x7; // Present + ReadWrite + User/Supervisor
 	return e;
 }
 
 pte_t *add_pte(pte_t *pt_first, vaddr_t vaddr, paddr_t paddr)
 {
 	pte_t *e = pte_of_addr(pt_first, vaddr);
-	*e = (paddr & 0xFFFFF000) | 0x3;
+	*e = (paddr & 0xFFFFF000) | 0x3; // Present + ReadWrite
 	return e;
 }
 
@@ -131,10 +131,10 @@ void memory_setup(multiboot_info_t* mbd)
 	add_gdt_descriptor(p+16,0xFFFFFFFF, 0, GDT_PRESENT | GDT_DPL_0 | GDT_CODE_DATA | GDT_RW);
 	add_gdt_descriptor(p+24,0xFFFFFFFF, 0, GDT_PRESENT | GDT_DPL_3 | GDT_CODE_DATA | GDT_EXEC | GDT_RW);
 	add_gdt_descriptor(p+32,0xFFFFFFFF, 0, GDT_PRESENT | GDT_DPL_3 | GDT_CODE_DATA | GDT_RW);
-	
+
 	memset(kernel_tss, 0, TSS_SIZE);
 	kernel_tss[TSS_SS0] = 0x10; // kernel data segment
-	kernel_tss[TSS_ESP0] = 0; // kernel stack
+	kernel_tss[TSS_ESP0] = 0;
 	add_gdt_descriptor(p+40, TSS_SIZE-1, (uint32_t) kernel_tss, GDT_PRESENT | GDT_DPL_3 | GDT_EXEC | GDT_AC); 
 
 	load_gdt((vaddr_t) kernel_gdt, 6*8);

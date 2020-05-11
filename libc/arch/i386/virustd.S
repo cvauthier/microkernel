@@ -9,6 +9,7 @@
 .globl read # ssize_t read(int fd, void *buffer, size_t count)
 .globl seek # uint32_t seek(int fd, int32_t pos, int flag)
 .globl sbrk # void *sbrk(int incr)
+.globl exec # void exec(const char *path);
 
 wait:
 	push %ebp
@@ -89,4 +90,11 @@ sbrk:
 	pop %ebx
 	ret
 
+exec:
+	push %ebx
+	mov $9, %eax
+	mov 8(%esp), %ebx
+	int $0x80
+	pop %ebx
+	ret
 

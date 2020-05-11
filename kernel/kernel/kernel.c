@@ -26,7 +26,11 @@ int some_task(__attribute__((unused)) void *unused)
 {
 	install_std_streams();
 
-	char path[100] = "/usr/include/stdio.h";
+	printf("Trying to execute /bin/a.out...\n");
+	exec("/bin/a.out");
+	printf("Failed\n");
+
+	/*char path[100] = "/usr/include/stdio.h";
 	
 	printf("What file to open ?\n");
 
@@ -52,7 +56,7 @@ int some_task(__attribute__((unused)) void *unused)
 			printf("%s", buffer);
 		}
 		printf("\n");
-	}
+	}*/
 
 	return 0;
 }
