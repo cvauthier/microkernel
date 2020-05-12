@@ -19,12 +19,15 @@ uint32_t free_block_list;
 #define SEEKFD_BEGIN 1
 #define SEEKFD_END 2
 
+typedef enum { FileType_File, FileType_Directory, FileType_Terminal } file_type_t;
+
 struct file_descr_t
 {
 	uint32_t inode;
 	uint32_t pos;
 	uint32_t size;
 	int owners;
+	file_type_t type;
 	uint8_t flags;
 
 	int32_t (*read)(struct file_descr_t*,void*,int32_t);

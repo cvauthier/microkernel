@@ -30,11 +30,14 @@ process_t *new_proc()
 	if ( !( p->files = create_dynarray() ) || 
 			 !( p->hw_context = create_hw_context() ) ||
 			 !( p->pd_addr = alloc_physical_page() ) ||
-			 !( p->kernel_stack = (stackint_t*) (malloc(KERNEL_STACK_SIZE)+KERNEL_STACK_SIZE) ) )
+			 !( p->kernel_stack = (stackint_t*) (malloc(KERNEL_STACK_SIZE)+KERNEL_STACK_SIZE) ) ||
+			 !( p->cwd = (char*) calloc(2,sizeof(char))) )
 	{
 		free_proc(p);
 		return 0;
 	}
+
+	p->cwd[0] = '/';
 
 	pde_t *pde = (pde_t*) temp_map(p->pd_addr, 0);
 	memset(pde, 0, PD_SIZE);
@@ -94,6 +97,9 @@ void free_proc(process_t *proc)
 		}
 		free_dynarray(proc->files);
 	}
+
+	if (proc->cwd)
+		free(proc->cwd);
 	
 	free(proc);
 }
@@ -174,26 +180,30 @@ void reschedule()
 
 int syscall_wait(int *pid, int *code)
 {
-	int children = 0;
-	for (int i = 0 ; i < NB_MAX_PROC ; i++)
+	int children = 1;
+	while (children)
 	{
-		if (i != cur_pid && proc_list[i] != 0 && proc_list[i]->parent_pid == cur_pid)
+		children = 0;
+		for (int i = 0 ; i < NB_MAX_PROC ; i++)
 		{
-			children++;
-			if (proc_list[i]->state == Zombie)
+			if (i != cur_pid && proc_list[i] != 0 && proc_list[i]->parent_pid == cur_pid)
 			{
-				*pid = i;
-				*code = proc_list[i]->exit_code;
-				free_proc(proc_list[i]);
-				proc_list[i] = 0;
-				return 1;
+				children++;
+				if (proc_list[i]->state == Zombie)
+				{
+					*pid = i;
+					*code = proc_list[i]->exit_code;
+					free_proc(proc_list[i]);
+					proc_list[i] = 0;
+					return 1;
+				}
 			}
 		}
-	}
-	if (children)
-	{
-		proc_list[cur_pid]->state = Waiting;
-		return -1;
+		if (children)
+		{
+			proc_list[cur_pid]->state = Waiting;
+			reschedule();
+		}
 	}
 	return 0;
 }
@@ -209,6 +219,14 @@ int syscall_fork()
 		return -1;
 	
 	process_t *forked = proc_list[cur_pid];
+
+	free(p->cwd);
+	if (!(p->cwd = (char*) calloc(strlen(forked->cwd),sizeof(char))))
+	{
+		free_proc(p);
+		return -1;
+	}
+	strcpy(p->cwd, forked->cwd);
 
 	memcpy(((uint8_t*)p->kernel_stack)-KERNEL_STACK_SIZE, ((uint8_t*)forked->kernel_stack)-KERNEL_STACK_SIZE, KERNEL_STACK_SIZE);
 
@@ -307,9 +325,13 @@ file_descr_t *access_file(int fd, process_t *p)
 
 int syscall_open(const char *path)
 {
-	file_descr_t *f = open_rd(path);
-	if (!f)
-		return -1;
+	char *actual_path = concat_dirs(proc_list[cur_pid]->cwd, path);
+	if (!actual_path) return -1;
+
+	file_descr_t *f = open_rd(actual_path);
+	free(actual_path);
+	if (!f) return -1;
+	
 	f->owners++;
 	dynarray_push(proc_list[cur_pid]->files, (void*)f);
 	return proc_list[cur_pid]->files->size-1;
@@ -453,9 +475,12 @@ static void install_segment(file_descr_t *fd, vaddr_t addr, uint32_t filepos, ui
 
 void syscall_exec(const char *path)
 {
-	file_descr_t *fd = open_rd(path);
-	if (!fd)
-		return;
+	char *actual_path = concat_dirs(proc_list[cur_pid]->cwd, path);
+	if (!actual_path) return;
+	
+	file_descr_t *fd = open_rd(actual_path);
+	free(actual_path);
+	if (!fd) return;
 
 	uint8_t header[52];
 	uint8_t text_hdr[32];
@@ -523,4 +548,40 @@ void syscall_exec(const char *path)
 
 	jump_to_ring3((void (*)()) entry_point, ((stackint_t*)p->stack_top)-1);	
 }
+
+char *syscall_getcwd(char *buf, size_t size)
+{
+	char *cwd = proc_list[cur_pid]->cwd;
+	if (strlen(cwd) >= size)
+		return 0;
+	
+	strcpy(buf, cwd);
+	return buf;
+}
+
+int syscall_chdir(const char *path)
+{
+	char *actual_path = concat_dirs(proc_list[cur_pid]->cwd, path);
+	if (!actual_path)
+		return -1;
+	
+	file_descr_t *fd = open_rd(actual_path);
+	int res = -1;
+
+	if (fd)
+	{
+		if (fd->type == FileType_Directory)
+		{
+			free(proc_list[cur_pid]->cwd);
+			proc_list[cur_pid]->cwd = actual_path;
+			res = 0;
+		}
+		else
+			free(actual_path);
+		close_rd(fd);
+	}
+	
+	return res;
+}
+
 

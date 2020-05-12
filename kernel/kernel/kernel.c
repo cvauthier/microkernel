@@ -27,10 +27,12 @@ int some_task(__attribute__((unused)) void *unused)
 {
 	install_std_streams();
 
-	printf("Trying to execute /bin/test...\n");
-	exec("/bin/test");
-	printf("Failed\n");
+	if (chdir("bin") < 0)
+		printf("Failed to chdir to bin\n");
 
+	printf("Trying to execute test...\n");
+	exec("test");
+	printf("Failed\n");
 
 	return 0;
 }

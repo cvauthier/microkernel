@@ -254,6 +254,7 @@ file_descr_t *new_terminal()
 	
 	fd->inode = (uint32_t) term_stack->size;
 	fd->size = TERM_BUFF_SIZE;
+	fd->type = FileType_Terminal;
 	fd->write = term_obj_write;
 	fd->read = term_obj_read;
 	fd->seek = (uint32_t(*)(file_descr_t*,int32_t,int)) do_nothing;

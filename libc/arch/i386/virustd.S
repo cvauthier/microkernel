@@ -10,6 +10,8 @@
 .globl seek # uint32_t seek(int fd, int32_t pos, int flag)
 .globl sbrk # void *sbrk(int incr)
 .globl exec # void exec(const char *path);
+.globl getcwd # char *getcwd(char *buf, size_t size)
+.globl chdir # int chdir(const char *path)
 
 wait:
 	push %ebp
@@ -93,6 +95,23 @@ sbrk:
 exec:
 	push %ebx
 	mov $9, %eax
+	mov 8(%esp), %ebx
+	int $0x80
+	pop %ebx
+	ret
+
+getcwd:
+	push %ebx
+	mov $10, %eax
+	mov 8(%esp), %ebx
+	mov 12(%esp), %ecx
+	int $0x80
+	pop %ebx
+	ret
+
+chdir:
+	push %ebx
+	mov $11, %eax
 	mov 8(%esp), %ebx
 	int $0x80
 	pop %ebx

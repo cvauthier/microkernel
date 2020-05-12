@@ -1,6 +1,7 @@
 #include <kernel/utility.h>
 
 #include <stdlib.h>
+#include <string.h>
 
 uint32_t read_bigendian_int(uint8_t *ptr)
 {
@@ -18,8 +19,7 @@ void write_bigendian_int(uint8_t *ptr, uint32_t n)
 
 dynarray_t *create_dynarray()
 {
-	dynarray_t *arr = (dynarray_t*) calloc(1,sizeof(dynarray_t));
-	return arr;
+	return (dynarray_t*) calloc(1,sizeof(dynarray_t));
 }
 
 void dynarray_push(dynarray_t *arr, void *elem)
@@ -131,4 +131,56 @@ void free_queue(queue_t *q)
 	free(q);
 }
 
+// On suppose que dir1 est de la forme "/D1/D2/.../Dn/"
+char *concat_dirs(const char *dir1, const char *dir2)
+{
+	char *res;
+	int i;
+
+	if (dir2[0] == '/')
+	{
+		// Chemin absolu
+		if (!(res = (char*) calloc(strlen(dir2)+4, sizeof(char))))
+			return 0;
+		res[0] = '/';
+		i = 0;
+	}
+	else
+	{
+		// Chemin relatif
+		int n = strlen(dir1);
+		if (!(res = (char*) calloc(n+strlen(dir2)+2, sizeof(char))))
+			return 0;
+		strcpy(res, dir1);
+		i = n-1;
+		if (res[i] != '/')
+			res[++i] = '/';
+	}
+
+	while (*dir2)
+	{
+		if (*dir2 != '/')
+		{
+			if (*dir2 == '.' && (dir2[1] == '/' || !dir2[1]))
+			{
+				dir2+=2;
+				continue;
+			}
+			if (*dir2 == '.' && dir2[1] == '.' && (dir2[2] == '/' || !dir2[2]))
+			{
+				dir2+=3;
+				while (i > 0 && res[--i] != '/');
+				continue;
+			}
+			while (*dir2 != '/' && *dir2)
+				res[++i] = *(dir2++);
+			if (*dir2 == '/')
+				res[++i] = '/';
+			dir2--;
+		}
+		dir2++;
+	}
+	res[i+1] = 0;
+	return res;
+}
 

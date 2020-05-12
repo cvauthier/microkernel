@@ -2,9 +2,10 @@
 
 char *strcpy (char *dest, const char *src)
 {
+	char *dest0 = dest;
 	while (*src)
 		*(dest++) = *(src++);
-	return dest;
+	return dest0;
 }
 
 char *strncpy(char *dest, const char *src, size_t num)

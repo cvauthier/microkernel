@@ -41,7 +41,8 @@ enum { Runnable, Waiting, WaitingTTY, Zombie };
 enum { Syscall_Wait, Syscall_Fork, Syscall_Exit, 
 			 Syscall_Open, Syscall_Close, Syscall_Read, Syscall_Write, Syscall_Seek,
 			 Syscall_Sbrk,
-			 Syscall_Exec };
+			 Syscall_Exec,
+			 Syscall_Getcwd, Syscall_Chdir};
 
 struct process_t
 {
@@ -52,6 +53,7 @@ struct process_t
 	int ms_left;
 	
 	dynarray_t *files;
+	char *cwd;
 
 	hw_context_t *hw_context;
 	paddr_t pd_addr;
@@ -106,5 +108,8 @@ void syscall_close(int fd);
 void *syscall_sbrk(int incr);
 
 void syscall_exec(const char *path); // Exécute un fichier elf
+
+char *syscall_getcwd(char *buf, size_t size);
+int syscall_chdir(const char *path);
 
 #endif

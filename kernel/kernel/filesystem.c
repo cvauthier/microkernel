@@ -48,6 +48,12 @@ uint32_t rd_alloc_block()
 uint32_t rd_find_in_dir(uint32_t dir_inode, const char *name)
 {
 	file_descr_t *dir = open_inode_rd(dir_inode);
+	if (dir->type != FileType_Directory)
+	{
+		close_rd(dir);
+		return 0;
+	}
+
 	uint32_t res = 0;
 
 	char buffer[32];
@@ -73,6 +79,7 @@ file_descr_t *open_inode_rd(uint32_t inode)
 	
 	uint32_t ofs = inode*block_size;
 
+	uint32_t type = read_bigendian_int(ramdisk+ofs);
 	uint32_t nlink = read_bigendian_int(ramdisk+ofs+4);
 	if (!nlink)
 		return 0;
@@ -80,6 +87,7 @@ file_descr_t *open_inode_rd(uint32_t inode)
 	file_descr_t *fd = (file_descr_t*) calloc(1, sizeof(file_descr_t));
 	fd->inode = inode;
 	fd->size = read_bigendian_int(ramdisk+ofs+8);
+	fd->type = (type == 0) ? FileType_File : FileType_Directory;
 	fd->read = read_rd;
 	fd->write = write_rd;
 	fd->seek = seek_rd;
@@ -112,6 +120,9 @@ file_descr_t *open_rd(const char *path)
 		path = subpath;
 		subpath = strchr(path+1,'/');
 	}
+
+	if (!path[1]) // Chemin de la forme /D1/.../Dn/
+		return open_inode_rd(cur_dir_ino);
 
 	uint32_t ino = rd_find_in_dir(cur_dir_ino, path+1);
 	return ino ? open_inode_rd(ino) : 0;

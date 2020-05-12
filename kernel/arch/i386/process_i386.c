@@ -77,11 +77,6 @@ void syscall_handler(uint32_t *regs)
 	{
 		case Syscall_Wait:
 			*eax = syscall_wait(ebx, ecx);
-			while (*eax < 0)
-			{
-				reschedule();
-				*eax = syscall_wait(ebx, ecx);
-			}
 			break;
 		case Syscall_Fork:
 			*eax = syscall_fork();
@@ -109,6 +104,12 @@ void syscall_handler(uint32_t *regs)
 			break;
 		case Syscall_Exec:
 			syscall_exec((const char*) *ebx);
+			break;
+		case Syscall_Getcwd:
+			*((char*) eax) = syscall_getcwd((char*) *ebx, (size_t) *ecx);
+			break;
+		case Syscall_Chdir:
+			*eax = syscall_chdir((const char*) *ebx);
 			break;
 		default:
 			*eax = -1;

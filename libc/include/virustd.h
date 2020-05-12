@@ -21,6 +21,9 @@ void *sbrk(int incr);
 
 void exec(const char *path);
 
+char *getcwd(char *buf, size_t size);
+int chdir(const char *path);
+
 #ifdef __cplusplus
 }
 #endif

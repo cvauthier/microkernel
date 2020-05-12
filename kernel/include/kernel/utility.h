@@ -39,4 +39,8 @@ void *queue_pop(queue_t *q);
 
 void free_queue(queue_t *q);
 
+// Manipulation de chemins
+
+char *concat_dirs(const char *dir1, const char *dir2);
+
 #endif
