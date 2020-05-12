@@ -22,7 +22,7 @@ int dup2(int oldfd, int newfd);
 
 void *sbrk(int incr);
 
-void exec(const char *path);
+void exec(const char *path, char **argv);
 
 char *getcwd(char *buf, size_t size);
 int chdir(const char *path);

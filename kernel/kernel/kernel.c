@@ -31,7 +31,7 @@ int some_task(__attribute__((unused)) void *unused)
 		printf("Failed to chdir to bin\n");
 
 	printf("Trying to execute test...\n");
-	exec("test");
+	exec("test", 0);
 	printf("Failed\n");
 
 	return 0;

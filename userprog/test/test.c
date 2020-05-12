@@ -2,6 +2,13 @@
 
 int main(int argc, char **argv)
 {
+	if (argc)
+	{
+		printf("Arguments:\n");
+		for (int i = 0 ; i < argc ; i++)
+			printf("%s\n", argv[i]);
+	}
+
 	int pid = fork();
 	if (pid < 0)
 	{

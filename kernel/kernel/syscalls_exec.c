@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define ARGC_MAX 100
+#define ARG_MAX_SIZE 1000
+
 /* Implémentation de l'appel exec */
 
 static uint16_t regroup_int16(uint8_t *ints, int endian)
@@ -56,7 +59,7 @@ static void install_segment(file_descr_t *fd, vaddr_t addr, uint32_t filepos, ui
 	}
 }
 
-void syscall_exec(const char *path)
+void syscall_exec(const char *path, char **argv)
 {
 	char *actual_path = concat_dirs(proc_list[cur_pid]->cwd, path);
 	if (!actual_path) return;
@@ -113,6 +116,26 @@ void syscall_exec(const char *path)
 	if (text_addr + text_msz > data_addr) return;
 	if (text_addr%PAGE_SIZE || data_addr%PAGE_SIZE) return;
 	
+	int argc = 0, total_size = 0;
+	char **argv_copy = 0;
+	if (argv)
+	{
+		while (argv[argc] && argc < ARGC_MAX)
+		{
+			int n = strlen(argv[argc])+1;
+			if (n+total_size > ARG_MAX_SIZE)
+				break;
+			total_size += n;
+			argc++;
+		}
+		argv_copy = (char**) calloc(argc, sizeof(char*));
+		for (int i = 0 ; i < argc ; i++)
+		{
+			argv_copy[i] = (char*) calloc(strlen(argv[i])+1,sizeof(char));
+			strcpy(argv_copy[i], argv[i]);
+		}
+	} 
+
 	process_t *p = proc_list[cur_pid];
 	free_proc_userspace(p);	
 
@@ -129,6 +152,28 @@ void syscall_exec(const char *path)
 	install_segment(fd, data_addr, data_pos, data_fsz, data_msz, 0);
 	install_segment(fd, p->stack_bottom, 0, 0, 4*PAGE_SIZE, 0);
 
-	jump_to_ring3((void (*)()) entry_point, ((stackint_t*)p->stack_top)-1);	
+	vaddr_t stack_addr = p->stack_top;
+	stack_addr -= total_size*sizeof(char) + (argc+2)*sizeof(stackint_t);
+	stack_addr = stack_addr/sizeof(stackint_t)*sizeof(stackint_t);
+	
+	stackint_t *stack;
+	stack = (stackint_t*) stack_addr;
+	stack[0] = (stackint_t) argc;				// argc
+	stack[1] = (stackint_t) (stack+2);	// argv
+	
+	char *ptr = (char*) (stack+2+argc);
+	for (int i = 0 ; i < argc ; i++)
+	{
+		stack[2+i] = (stackint_t) ptr;
+		char *s = argv_copy[i];
+		while (*s)
+			*(ptr++) = *(s++);
+		*(ptr++) = 0;
+		free(argv_copy[i]);
+	}
+	if (argv_copy)
+		free(argv_copy);
+
+	jump_to_ring3((void (*)()) entry_point, stack);	
 }
 

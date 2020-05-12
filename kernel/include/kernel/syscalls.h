@@ -25,7 +25,7 @@ int syscall_dup2(int oldfd, int newfd);
 
 // Appel exec
 
-void syscall_exec(const char *path); // Exécute un fichier elf
+void syscall_exec(const char *path, char **argv); // Exécute un fichier elf
 
 // Autres appels
 
