@@ -173,12 +173,33 @@ except19:
 	popal
 	iret
 
+#include <kernel/syscall_codes.h>
+
 inter128:
 	cli
 	pushal
-	push 12(%esp) # esp juste avant le pushal
-	call syscall_handler
-	pop %eax
+	mov %esp, %ebp
+	
+	mov 28(%ebp), %eax
+	cmp $NB_SYSCALLS, %eax
+	jge .invalid_call
+	cmp $0, %eax
+	jl .invalid_call
+	
+	mov syscalls_addr(,%eax,4), %eax
+	
+	# On empile ebx, ecx, edx
+	push 20(%ebp)
+	push 24(%ebp)
+	push 16(%ebp)
+	call *%eax
+	jmp .end_call
+
+.invalid_call:
+	mov $-1, %eax
+.end_call:
+	mov %eax, 28(%ebp)
+	mov %ebp, %esp
 	popal
 	iret
 

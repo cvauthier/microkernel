@@ -119,6 +119,24 @@ void interrupts_setup()
 	
 	add_idt_descriptor(p+1024 , (uint32_t)inter128, 0x08, IDT_PRESENT | IDT_DPL_3 | IDT_INT_GATE); 
 
+	for (int i = 0 ; i < NB_SYSCALLS ; i++)
+		syscalls_addr[i] = (uint32_t) syscall_invalid;
+
+	syscalls_addr[SYSCALL_WAIT] = (uint32_t) syscall_wait;
+	syscalls_addr[SYSCALL_FORK] = (uint32_t) syscall_fork;
+	syscalls_addr[SYSCALL_EXIT] = (uint32_t) syscall_exit;
+	syscalls_addr[SYSCALL_OPEN] = (uint32_t) syscall_open;
+	syscalls_addr[SYSCALL_CLOSE] = (uint32_t) syscall_close;
+	syscalls_addr[SYSCALL_READ] = (uint32_t) syscall_read;
+	syscalls_addr[SYSCALL_WRITE] = (uint32_t) syscall_write;
+	syscalls_addr[SYSCALL_SEEK] = (uint32_t) syscall_seek;
+	syscalls_addr[SYSCALL_SBRK] = (uint32_t) syscall_sbrk;
+	syscalls_addr[SYSCALL_EXEC] = (uint32_t) syscall_exec;
+	syscalls_addr[SYSCALL_GETCWD] = (uint32_t) syscall_getcwd;
+	syscalls_addr[SYSCALL_CHDIR] = (uint32_t) syscall_chdir;
+	syscalls_addr[SYSCALL_DUP] = (uint32_t) syscall_dup;
+	syscalls_addr[SYSCALL_DUP2] = (uint32_t) syscall_dup2;
+
 	load_idt(kernel_idt);
 }
 

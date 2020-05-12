@@ -23,8 +23,6 @@ extern void switch_initial(hw_context_t *init);
 extern void kernel_proc_start();
 extern void forked_proc_start();
 
-void syscall_handler(uint32_t *regs);
-
 #endif
 
 

@@ -34,7 +34,11 @@ kernel/utility.o \
 kernel/filesystem.o \
 kernel/process.o \
 kernel/keyboard.o \
-kernel/test.o
+kernel/test.o \
+kernel/syscalls_sched.o \
+kernel/syscalls_file.o \
+kernel/syscalls_exec.o \
+kernel/syscalls_misc.o
 
 OBJS=\
 $(ARCHDIR)/crti.o \

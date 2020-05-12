@@ -1,6 +1,7 @@
 #include <kernel/process.h>
 #include <kernel/filesystem.h>
 #include <kernel/memory.h>
+#include <kernel/syscalls.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -64,55 +65,5 @@ hw_context_t *create_hw_context()
 void free_hw_context(hw_context_t *ctx)
 {
 	free(ctx);
-}
-
-void syscall_handler(uint32_t *regs)
-{
-	int *eax = (int*) (regs+PUSHA_EAX);
-	int *ebx = (int*) (regs+PUSHA_EBX);
-	int *ecx = (int*) (regs+PUSHA_ECX);
-	int *edx = (int*) (regs+PUSHA_EDX);
-
-	switch (*eax)
-	{
-		case Syscall_Wait:
-			*eax = syscall_wait(ebx, ecx);
-			break;
-		case Syscall_Fork:
-			*eax = syscall_fork();
-			break;
-		case Syscall_Exit:
-			syscall_exit(*ebx);
-			break;
-		case Syscall_Open:
-			*eax = syscall_open((const char*) *ebx);
-			break;
-		case Syscall_Write:
-			*((int32_t*)eax) = syscall_write(*ebx, (void*) *ecx, *((int32_t*)edx));
-			break;
-		case Syscall_Read:
-			*((int32_t*)eax) = syscall_read(*ebx, (void*) *ecx, *((int32_t*)edx));
-			break;
-		case Syscall_Seek:
-			*((uint32_t*)eax) = syscall_seek(*ebx, *((int32_t*)ecx), *edx);
-			break;
-		case Syscall_Close:
-			syscall_close(*ebx);
-			break;
-		case Syscall_Sbrk:
-			*((void**) eax) = syscall_sbrk(*ebx);
-			break;
-		case Syscall_Exec:
-			syscall_exec((const char*) *ebx);
-			break;
-		case Syscall_Getcwd:
-			*((char*) eax) = syscall_getcwd((char*) *ebx, (size_t) *ecx);
-			break;
-		case Syscall_Chdir:
-			*eax = syscall_chdir((const char*) *ebx);
-			break;
-		default:
-			*eax = -1;
-	}
 }
 

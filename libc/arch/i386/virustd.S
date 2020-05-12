@@ -12,108 +12,81 @@
 .globl exec # void exec(const char *path);
 .globl getcwd # char *getcwd(char *buf, size_t size)
 .globl chdir # int chdir(const char *path)
+.globl dup # int dup(int oldfd)
+.globl dup2 # int dup2(int oldfd, int newfd)
+
+#include <kernel/syscall_codes.h>
 
 wait:
+	mov $SYSCALL_WAIT, %eax
+	jmp syscall
+
+fork:
+	mov $SYSCALL_FORK, %eax
+	jmp syscall
+
+exit:
+	mov 4(%esp), %ebx
+	mov $SYSCALL_EXIT, %eax
+	int $0x80
+
+open:
+	mov $SYSCALL_OPEN, %eax
+	jmp syscall
+
+close:
+	mov $SYSCALL_CLOSE, %eax
+	jmp syscall
+
+write:
+	mov $SYSCALL_WRITE, %eax
+	jmp syscall
+
+read:
+	mov $SYSCALL_READ, %eax
+	jmp syscall
+
+seek:
+	mov $SYSCALL_SEEK, %eax
+	jmp syscall
+
+sbrk:
+	mov $SYSCALL_SBRK, %eax
+	jmp syscall
+
+exec:
+	mov $SYSCALL_EXEC, %eax
+	jmp syscall
+
+getcwd:
+	mov $SYSCALL_GETCWD, %eax
+	jmp syscall
+
+chdir:
+	mov $SYSCALL_CHDIR, %eax
+	jmp syscall
+
+dup:
+	mov $SYSCALL_DUP, %eax
+	jmp syscall
+
+dup2:
+	mov $SYSCALL_DUP2, %eax
+	jmp syscall
+
+syscall:
 	push %ebp
 	push %ebx
-	mov %esp, %ebp
-	mov $0, %eax
+	push %edx
+	mov %esp,%ebp
+	mov 16(%esp),%ebx
+	mov 20(%esp), %ecx
+	mov 24(%esp), %edx
 	int $0x80
-	mov 12(%ebp), %edx # pid -> edx
-	mov %ebx, (%edx) # *pid = ebx
-	mov 16(%ebp), %edx # code -> edx
-	mov %ecx, (%edx) # *code = ecx
 	mov %ebp, %esp
+	pop %edx
 	pop %ebx
 	pop %ebp
 	ret
 
-fork:
-	mov $1, %eax
-	int $0x80
-	ret
-
-exit:
-	mov 4(%esp), %ebx
-	mov $2, %eax
-	int $0x80
-
-open:
-	push %ebx
-	mov $3, %eax
-	mov 8(%esp), %ebx
-	int $0x80
-	pop %ebx
-	ret
-
-close:
-	push %ebx
-	mov $4, %eax
-	mov 8(%esp), %ebx
-	int $0x80
-	pop %ebx
-	ret
-
-read:
-	push %ebx
-	mov $5, %eax
-	mov 8(%esp), %ebx
-	mov 12(%esp), %ecx
-	mov 16(%esp), %edx
-	int $0x80
-	pop %ebx
-	ret
-
-write:
-	push %ebx
-	mov $6, %eax
-	mov 8(%esp), %ebx
-	mov 12(%esp), %ecx
-	mov 16(%esp), %edx
-	int $0x80
-	pop %ebx
-	ret
-
-seek:
-	push %ebx
-	mov $7, %eax
-	mov 8(%esp), %ebx
-	mov 12(%esp), %ecx
-	mov 16(%esp), %edx
-	int $0x80
-	pop %ebx
-	ret
-
-sbrk:
-	push %ebx
-	mov $8, %eax
-	mov 8(%esp), %ebx
-	int $0x80
-	pop %ebx
-	ret
-
-exec:
-	push %ebx
-	mov $9, %eax
-	mov 8(%esp), %ebx
-	int $0x80
-	pop %ebx
-	ret
-
-getcwd:
-	push %ebx
-	mov $10, %eax
-	mov 8(%esp), %ebx
-	mov 12(%esp), %ecx
-	int $0x80
-	pop %ebx
-	ret
-
-chdir:
-	push %ebx
-	mov $11, %eax
-	mov 8(%esp), %ebx
-	int $0x80
-	pop %ebx
-	ret
 
