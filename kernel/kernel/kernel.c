@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <virustd.h>
+#include <virux_lib.h>
 
 #include <kernel/tty.h>
 #include <kernel/memory.h>

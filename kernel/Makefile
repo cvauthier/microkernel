@@ -30,7 +30,6 @@ LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
 KERNEL_OBJS=\
 $(KERNEL_ARCH_OBJS) \
 kernel/kernel.o \
-kernel/utility.o \
 kernel/filesystem.o \
 kernel/process.o \
 kernel/keyboard.o \

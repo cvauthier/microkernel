@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <virustd.h>
+#include <virux_lib.h>
 
 #define FILE_EOF 1
 #define FILE_ERROR 2

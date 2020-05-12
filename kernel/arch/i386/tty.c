@@ -3,9 +3,9 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <virux_lib.h>
 
 #include <kernel/tty.h>
-#include <kernel/utility.h>
 #include <kernel/process.h>
 
 #include "vga.h"

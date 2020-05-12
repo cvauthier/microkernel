@@ -5,7 +5,7 @@
 #if defined(__is_libk)
 #include <kernel/memory.h>
 #else
-#include <virustd.h>
+#include <virux_lib.h>
 #endif
 
 static uint8_t *heap_begin = 0;
@@ -153,12 +153,6 @@ void init_heap()
 	*((uint32_t*) heap_begin) = *((uint32_t*) (heap_end-4)) = (heap_end-heap_begin) | BLOCK_FREE;
 }
 
-void xkcd()
-{
-	static int dckx = 0;
-	dckx++;
-}
-
 void *malloc(size_t size)
 {
 	if (!size)
@@ -181,8 +175,6 @@ void *malloc(size_t size)
 		if ((cur.flags & BLOCK_FREE) && cur.size >= size)
 		{
 			allocate_block(&cur, size);
-			if ((uint32_t)(cur.addr+cur.size) == 0xc0c052c8)
-				xkcd();
 			return block_content_addr(&cur);
 		}
 	}
@@ -221,8 +213,6 @@ void *malloc(size_t size)
 		return 0;
 	
 	allocate_block(&cur, size);
-	if ((uint32_t)(cur.addr+cur.size) == 0xc0c052c8)
-		xkcd();
 	return block_content_addr(&cur);
 }
 

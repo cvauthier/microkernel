@@ -1,5 +1,5 @@
 #include <kernel/filesystem.h>
-#include <kernel/utility.h>
+#include <virux_lib.h>
 
 #include <stdio.h>
 #include <stdlib.h>

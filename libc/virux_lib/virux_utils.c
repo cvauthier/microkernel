@@ -1,4 +1,4 @@
-#include <kernel/utility.h>
+#include <virux_lib.h>
 
 #include <stdlib.h>
 #include <string.h>

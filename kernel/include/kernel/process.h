@@ -3,7 +3,7 @@
 
 #include <kernel/memory.h>
 #include <kernel/filesystem.h>
-#include <kernel/utility.h>
+#include <virux_lib.h>
 
 /* Dépendant de l'architecture, implémenté dans le répertoire arch/ */
 

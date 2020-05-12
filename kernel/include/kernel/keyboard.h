@@ -4,7 +4,7 @@
 /* Driver pour clavier PS/2 */
 
 #include <stdint.h>
-#include <kernel/utility.h>
+#include <virux_lib.h>
 
 typedef enum { Kb_Pressed, Kb_Released } kb_event_type;
 typedef enum

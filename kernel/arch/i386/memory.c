@@ -3,10 +3,10 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdlib.h>
+#include <virux_lib.h>
 
 #include <kernel/memory.h>
 #include <kernel/filesystem.h>
-#include <kernel/utility.h>
 
 #include "memory_i386.h"
 #include "interrupts.h"

@@ -37,6 +37,7 @@ string/memcpy.o \
 string/memmove.o \
 string/memset.o \
 string/string.o \
+virux_lib/virux_utils.o \
 
 HOSTEDOBJS=\
 $(ARCH_HOSTEDOBJS) \
