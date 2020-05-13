@@ -18,7 +18,7 @@ file_descr_t *access_file(int fd, process_t *p)
 
 int syscall_open(const char *path)
 {
-	char *actual_path = concat_dirs(proc_list[cur_pid]->cwd, path);
+	char *actual_path = concat_dirs(proc_list[cur_pid]->cwd, path, 0);
 	if (!actual_path) return -1;
 
 	file_descr_t *f = open_rd(actual_path);

@@ -132,7 +132,7 @@ void free_queue(queue_t *q)
 }
 
 // On suppose que dir1 est de la forme "/D1/D2/.../Dn/"
-char *concat_dirs(const char *dir1, const char *dir2)
+char *concat_dirs(const char *dir1, const char *dir2, int trailing_slash)
 {
 	char *res;
 	int i;
@@ -140,7 +140,7 @@ char *concat_dirs(const char *dir1, const char *dir2)
 	if (dir2[0] == '/')
 	{
 		// Chemin absolu
-		if (!(res = (char*) calloc(strlen(dir2)+4, sizeof(char))))
+		if (!(res = (char*) calloc(strlen(dir2)+2, sizeof(char))))
 			return 0;
 		res[0] = '/';
 		i = 0;
@@ -149,7 +149,7 @@ char *concat_dirs(const char *dir1, const char *dir2)
 	{
 		// Chemin relatif
 		int n = strlen(dir1);
-		if (!(res = (char*) calloc(n+strlen(dir2)+2, sizeof(char))))
+		if (!(res = (char*) calloc(n+strlen(dir2)+5, sizeof(char))))
 			return 0;
 		strcpy(res, dir1);
 		i = n-1;
@@ -163,12 +163,12 @@ char *concat_dirs(const char *dir1, const char *dir2)
 		{
 			if (*dir2 == '.' && (dir2[1] == '/' || !dir2[1]))
 			{
-				dir2+=2;
+				dir2++;
 				continue;
 			}
 			if (*dir2 == '.' && dir2[1] == '.' && (dir2[2] == '/' || !dir2[2]))
 			{
-				dir2+=3;
+				dir2+=2;
 				while (i > 0 && res[--i] != '/');
 				continue;
 			}
@@ -180,6 +180,8 @@ char *concat_dirs(const char *dir1, const char *dir2)
 		}
 		dir2++;
 	}
+	if (res[i] != '/' && trailing_slash)
+		res[++i] = '/';
 	res[i+1] = 0;
 	return res;
 }

@@ -218,11 +218,9 @@ void *malloc(size_t size)
 
 void fuse_with_next(mem_block *blk, mem_block *next)
 {
-	mem_block res;
-	res.addr = blk->addr;
-	res.size = blk->size+next->size;
-	res.flags = (blk->flags & (BLOCK_FIRST | BLOCK_PREV_FREE)) | (next->flags & BLOCK_LAST) | BLOCK_FREE;
-	write_block(&res);
+	blk->size += next->size;
+	blk->flags = (blk->flags & (BLOCK_FIRST | BLOCK_PREV_FREE)) | (next->flags & BLOCK_LAST) | BLOCK_FREE;
+	write_block(blk);
 }
 
 void free(void *ptr)

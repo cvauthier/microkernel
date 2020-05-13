@@ -61,7 +61,7 @@ static void install_segment(file_descr_t *fd, vaddr_t addr, uint32_t filepos, ui
 
 void syscall_exec(const char *path, char **argv)
 {
-	char *actual_path = concat_dirs(proc_list[cur_pid]->cwd, path);
+	char *actual_path = concat_dirs(proc_list[cur_pid]->cwd, path, 0);
 	if (!actual_path) return;
 	
 	file_descr_t *fd = open_rd(actual_path);

@@ -58,6 +58,7 @@ void free_proc_userspace(process_t *proc)
 		if (!pde_is_present(pd_temp))
 			continue;
 	
+		pde_set_present(pd_temp, 0);
 		pte_t *pt_temp = (pte_t*) temp_map(pde_addr(pd_temp), 1);
 
 		for (int j = 0 ; j < NB_PTE ; j++)
@@ -68,6 +69,7 @@ void free_proc_userspace(process_t *proc)
 		}
 		free_physical_page(pde_addr(pd_temp));
 	}
+	tlb_flush();
 }
 
 void free_proc(process_t *proc)

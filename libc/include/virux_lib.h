@@ -68,7 +68,7 @@ void free_queue(queue_t *q);
 
 // Manipulation de chemins
 
-char *concat_dirs(const char *dir1, const char *dir2);
+char *concat_dirs(const char *dir1, const char *dir2, int trailing_slash);
 
 #ifdef __cplusplus
 }

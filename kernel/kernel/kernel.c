@@ -26,12 +26,13 @@ void install_std_streams()
 int some_task(__attribute__((unused)) void *unused)
 {
 	install_std_streams();
-
+/*
 	if (chdir("bin") < 0)
 		printf("Failed to chdir to bin\n");
 
 	printf("Trying to execute test...\n");
-	exec("test", 0);
+	exec("test", 0);*/
+	exec("bin/shell", 0);
 	printf("Failed\n");
 
 	return 0;

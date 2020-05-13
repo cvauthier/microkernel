@@ -64,14 +64,14 @@ char *syscall_getcwd(char *buf, size_t size)
 	char *cwd = proc_list[cur_pid]->cwd;
 	if (strlen(cwd) >= size)
 		return 0;
-	
+
 	strcpy(buf, cwd);
 	return buf;
 }
 
 int syscall_chdir(const char *path)
 {
-	char *actual_path = concat_dirs(proc_list[cur_pid]->cwd, path);
+	char *actual_path = concat_dirs(proc_list[cur_pid]->cwd, path, 1);
 	if (!actual_path)
 		return -1;
 	

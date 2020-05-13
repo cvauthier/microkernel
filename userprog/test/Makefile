@@ -6,6 +6,8 @@ LIBS?=
 .PHONY: all clean install
 .SUFFIXES: .o .c .S
 
+USER_OBJS=test.o
+
 include ../compil/make.config
 
 all: test
@@ -17,11 +19,11 @@ test: $(OBJS)
 	$(CC) -c $< -o $@ -std=gnu11 $(CFLAGS)
 
 clean:
-	rm -f a.out
+	rm -f test
 	rm -f $(OBJS) *.o */*.o */*/*.o
 
 install: test
 	mkdir -p $(DESTDIR)$(BINDIR)
-	cp test $(DESTDIR)$(BINDIR)
+	cp $< $(DESTDIR)$(BINDIR)
 	
 
