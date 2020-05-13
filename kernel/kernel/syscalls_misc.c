@@ -3,6 +3,7 @@
 #include <kernel/process.h>
 #include <kernel/memory.h>
 #include <kernel/filesystem.h>
+#include <kernel/pipes.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -94,9 +95,30 @@ int syscall_chdir(const char *path)
 	return res;
 }
 
+int syscall_pipe(int *pipefds, int flags)
+{
+	file_descr_t *f[2];
+	create_pipe(f);
+	if (!f[0])
+		return -1;
+	
+	if (flags & O_CLOEXEC)
+	{
+		f[0]->flags |= FILE_CLOEXEC;
+		f[1]->flags |= FILE_CLOEXEC;
+	}
+	f[0]->owners = f[1]->owners = 1;
+
+	process_t *p = proc_list[cur_pid];
+	dynarray_push(p->files, (void*) f[0]);
+	dynarray_push(p->files, (void*) f[1]);
+	pipefds[0] = p->files->size-2;
+	pipefds[1] = p->files->size-1;
+	return 0;
+}
+
 int syscall_invalid()
 {
 	return -1;
 }
-
 

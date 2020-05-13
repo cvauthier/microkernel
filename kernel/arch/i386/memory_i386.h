@@ -44,6 +44,10 @@ extern void load_idt(void *idt_addr);
 extern void outb(uint16_t port, uint8_t val);
 extern uint8_t inb(uint16_t port);
 
+// Autres
+
+extern uint32_t get_cr2();
+
 // Quelques pages temporaires
 
 extern uint32_t temp_page_1;

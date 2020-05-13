@@ -29,7 +29,7 @@ void fclose(FILE *stream)
 
 FILE *fopen(const char *filename, __attribute__((unused)) const char *mode)
 {
-	int fd = open(filename);
+	int fd = open(filename, 0);
 	if (fd < 0)
 		return 0;
 

@@ -25,7 +25,7 @@ static uint32_t regroup_int32(uint8_t *ints, int endian)
 static void install_segment(file_descr_t *fd, vaddr_t addr, uint32_t filepos, uint32_t filesz, uint32_t memsz, int exec)
 {
 	uint8_t c;
-	fd->seek(fd, filepos, SEEKFD_BEGIN);
+	fd->seek(fd, filepos, SEEK_SET);
 
 	vaddr_t addr0 = addr;
 
@@ -90,7 +90,7 @@ void syscall_exec(const char *path, char **argv)
 
 	entry_point = (vaddr_t) regroup_int32(header+24, endian);
 
-	fd->seek(fd, regroup_int32(header+28,endian), SEEKFD_BEGIN); // Début de la Program Header Table
+	fd->seek(fd, regroup_int32(header+28,endian), SEEK_SET); // Début de la Program Header Table
 
 	if (fd->read(fd, text_hdr, 32) != 32) return;
 	if (fd->read(fd, data_hdr, 32) != 32) return;
@@ -138,6 +138,20 @@ void syscall_exec(const char *path, char **argv)
 
 	process_t *p = proc_list[cur_pid];
 	free_proc_userspace(p);	
+
+	for (int i = 0 ; i < p->files->size ; i++)
+	{
+		file_descr_t *fd = (file_descr_t*) p->files->array[i];
+		if (fd && fd->flags & FILE_CLOEXEC)
+		{
+			fd->owners--;
+			if (!fd->owners)
+			{
+				fd->close(fd);
+				p->files->array[i] = 0;
+			}
+		}
+	}
 
 	// TODO : s'assurer qu'il y a assez de mémoire
 

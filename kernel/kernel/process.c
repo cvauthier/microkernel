@@ -1,4 +1,5 @@
 #include <kernel/process.h>
+#include <kernel/pipes.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -123,6 +124,7 @@ void scheduler_init()
 	cur_pid = -1;
 	for (int i = 0 ; i <= MAX_PRIORITY ; i++)
 		process_queues[i] = create_queue();
+	init_pipe_system();
 }
 
 void make_runnable(int pid)
@@ -179,4 +181,76 @@ void reschedule()
 	if (prev_pid != cur_pid)
 		context_switch(proc_list[prev_pid], proc_list[cur_pid]);
 }
+
+static void clean_resource(resource_t *res)
+{
+	while (!queue_empty(res->waiting_queue))
+	{
+		int pid = (int) queue_first(res->waiting_queue);
+		if (proc_list[pid] && proc_list[pid]->state == WaitingResource)
+			break;
+		queue_pop(res->waiting_queue);
+	}
+}
+
+resource_t *create_resource()
+{
+	resource_t *r = (resource_t*) calloc(1,sizeof(resource_t));
+	r->waiting_queue = create_queue();
+}
+
+void resource_request(resource_t *res)
+{
+	clean_resource(res);
+	if (queue_empty(res->waiting_queue))
+	{	
+		queue_push(res->waiting_queue, (void*) cur_pid);
+		return;
+	}
+	queue_push(res->waiting_queue, (void*) cur_pid);
+	proc_list[cur_pid]->state = WaitingResource;
+	reschedule();
+}
+
+void resource_wait_event(resource_t *res)
+{
+	res->waiting_event = 1;
+	queue_push(res->waiting_queue, (void*) cur_pid);
+	proc_list[cur_pid]->state = WaitingResource;
+	reschedule();
+}
+
+int resource_waiting_event(resource_t *res)
+{
+	return res->waiting_event;
+}
+
+void resource_event(resource_t *res)
+{
+	res->waiting_event = 1;
+	clean_resource(res);
+	if (!queue_empty(res->waiting_queue))
+		make_runnable((int) queue_first(res->waiting_queue));
+}
+
+void resource_release(resource_t *res)
+{
+	queue_pop(res->waiting_queue);
+	clean_resource(res);
+	if (!queue_empty(res->waiting_queue))
+		make_runnable((int) queue_first(res->waiting_queue));
+}
+
+void free_resource(resource_t *res)
+{
+	while (!queue_empty(res->waiting_queue))
+	{
+		int pid = (int) queue_pop(res->waiting_queue);
+		if (proc_list[pid] && proc_list[pid]->state == WaitingResource)
+			make_runnable(pid);
+	}
+	free_queue(res->waiting_queue);
+	free(res);
+}
+
 

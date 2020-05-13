@@ -27,6 +27,7 @@ temp_page_6:
 .globl tlb_flush # void tlb_flush()
 .globl outb # void outb(uint16_t port, uint8_t val)
 .globl inb # uint8_t inb(uint16_t port)
+.globl get_cr2 # uint32_t get_cr2()
 
 gdtr:
 .word 0 # GDT size
@@ -83,6 +84,10 @@ inb:
 	xor %eax, %eax
 	mov 4(%esp), %edx
 	inb %dx,%al
+	ret
+
+get_cr2:
+	mov %cr2, %eax
 	ret
 
 

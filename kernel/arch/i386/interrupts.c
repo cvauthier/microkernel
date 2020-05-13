@@ -2,6 +2,10 @@
 #include <stdio.h>
 
 #include <kernel/keyboard.h>
+#include <kernel/process.h>
+
+#include <stdio.h>
+#include <stdlib.h>
 
 #include "interrupts.h"
 #include "memory_i386.h"
@@ -25,6 +29,7 @@ extern int except16();
 extern int except17();
 extern int except18();
 extern int except19();
+extern int except20();
 extern int inter128();
 extern int irq0();
 extern int irq1();
@@ -116,6 +121,7 @@ void interrupts_setup()
 	add_idt_descriptor(p+136 , (uint32_t)except17, 0x08, IDT_PRESENT | IDT_DPL_0 | IDT_INT_GATE); 
 	add_idt_descriptor(p+144 , (uint32_t)except18, 0x08, IDT_PRESENT | IDT_DPL_0 | IDT_INT_GATE); 
 	add_idt_descriptor(p+152 , (uint32_t)except19, 0x08, IDT_PRESENT | IDT_DPL_0 | IDT_INT_GATE); 
+	add_idt_descriptor(p+160 , (uint32_t)except20, 0x08, IDT_PRESENT | IDT_DPL_0 | IDT_INT_GATE); 
 	
 	add_idt_descriptor(p+1024 , (uint32_t)inter128, 0x08, IDT_PRESENT | IDT_DPL_3 | IDT_INT_GATE); 
 
@@ -136,16 +142,31 @@ void interrupts_setup()
 	syscalls_addr[SYSCALL_CHDIR] = (uint32_t) syscall_chdir;
 	syscalls_addr[SYSCALL_DUP] = (uint32_t) syscall_dup;
 	syscalls_addr[SYSCALL_DUP2] = (uint32_t) syscall_dup2;
+	syscalls_addr[SYSCALL_PIPE] = (uint32_t) syscall_pipe;
 
 	load_idt(kernel_idt);
 }
 
-void page_fault_handler()
-{
-}
+static const char *except_name[] = {"Divide-by-Zero", "Debug", "NMI", "Breakpoint", "Overflow", "Bound Range Exceeded", "Invalid Opcode", 
+																		"Device Not Available", "Double Fault", "Coprocessor Segment Overrun", "Invalid TSS", "Segment Not Present", 
+																		"Stack Segment Fault", "General Protection Fault", "Page Fault", "", "x87 Floating Point Error", 
+																		"Alignment Check", "Machine Check", "SIMD Floating Point Exception", "Virtualization Exception"};
 
-void default_handler()
+void exception_handler(int num, uint32_t *stack)
 {
+	if (cur_pid != -1)
+	{
+		printf("Program %d received exception %d : %s\n", cur_pid, num, except_name[num]);
+		if ((10 <= num && num <= 14) || num == 17)
+			printf("Error code %d\n", stack[0]);
+		if (num == 14)
+			printf("Tried to access address %d\n", get_cr2());
+		syscall_exit(3);
+	}
+	else
+	{
+		abort();
+	}
 }
 
 void irq_handler(int num)

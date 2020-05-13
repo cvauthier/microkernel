@@ -8,25 +8,16 @@
 #include <kernel/tty.h>
 #include <kernel/process.h>
 
-#include "vga.h"
-
-#define VGA_WIDTH 80
-#define VGA_HEIGHT 25
-
-static uint16_t* const VGA_MEMORY = (uint16_t*) 0xC03FF000;
-
-static size_t terminal_row;
-static size_t terminal_column;
-static uint8_t terminal_color;
-static uint16_t* terminal_buffer;
-
 // "General Terminal Interface" : https://pubs.opengroup.org/onlinepubs/9699919799/basedefs/V1_chap11.html
 
 #define TERM_BUFF_SIZE 4096
 
+static int term_width;
+static int term_height;
+
 typedef struct
 {
-	dynarray_t *waiting_proc;
+	resource_t *res;
 	file_descr_t *fd;
 	char *buffer;
 	char *charsizes;
@@ -43,67 +34,6 @@ static dynarray_t *term_stack;
 
 static int term_capslock;
 static int term_shift;
-
-void terminal_basic_init() 
-{
-	terminal_color = vga_entry_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
-	terminal_buffer = VGA_MEMORY;
-	terminal_clear();
-}
-
-void terminal_clear()
-{
-	terminal_row = 0;
-	terminal_column = 0;
-	for (size_t y = 0; y < VGA_HEIGHT; y++) 
-	{
-		for (size_t x = 0; x < VGA_WIDTH; x++) 
-			terminal_buffer[y * VGA_WIDTH + x] = vga_entry(' ', terminal_color);
-	}
-}
-
-void terminal_setcolor(uint8_t color) 
-{
-	terminal_color = color;
-}
-
-void terminal_putentryat(unsigned char c, uint8_t color, size_t x, size_t y) 
-{
-	terminal_buffer[y * VGA_WIDTH + x] = vga_entry(c, color);
-}
-
-void terminal_putchar(char c) 
-{
-	unsigned char uc = c;
-	if (c != '\n')
-		terminal_putentryat(uc, terminal_color, terminal_column, terminal_row);
-	if (++terminal_column == VGA_WIDTH || c == '\n') 
-	{
-		terminal_column = 0;
-		if (++terminal_row == VGA_HEIGHT)
-		{
-			terminal_row--;
-			for (size_t y = 0 ; y+1 < VGA_HEIGHT ; y++)
-			{
-				for (size_t x = 0 ; x < VGA_WIDTH ; x++)
-					terminal_buffer[y * VGA_WIDTH + x] = terminal_buffer[(y+1) * VGA_WIDTH + x];
-			}
-			for (size_t x = 0 ; x < VGA_WIDTH ; x++)
-				terminal_buffer[(VGA_HEIGHT - 1) * VGA_WIDTH + x] = vga_entry(' ', VGA_COLOR_BLACK);
-		}
-	}
-}
-
-void terminal_write(const char* data, size_t size) 
-{
-	for (size_t i = 0; i < size; i++)
-		terminal_putchar(data[i]);
-}
-
-void terminal_writestring(const char* data) 
-{
-	terminal_write(data, strlen(data));
-}
 
 void inc_index(int *i)
 {
@@ -125,7 +55,7 @@ int term_char_size(int lsize, char c)
 	switch(c)
 	{
 		case '\n':
-			size = VGA_WIDTH;
+			size = term_width;
 			break;
 		case '\t':
 			size = 4;
@@ -133,7 +63,7 @@ int term_char_size(int lsize, char c)
 		default:
 			size = 1;
 	}
-	return (size+lsize > VGA_WIDTH) ? VGA_WIDTH-lsize : size;
+	return (size+lsize > term_width) ? term_width-lsize : size;
 }
 
 void term_push_char(term_obj_t *term, char c)
@@ -147,15 +77,15 @@ void term_push_char(term_obj_t *term, char c)
 	if (term->pos == term->begin_typed)  term->begin_typed = term->begin;
 	if (term->pos == term->begin_typing) term->begin_typing = term->begin;
 
-	if (term->line_size >= VGA_WIDTH)
+	if (term->line_size >= term_width)
 	{
 		term->line_size = 0;
 		term->nb_lines++;
-		if (term->nb_lines > VGA_HEIGHT)
+		if (term->nb_lines > term_height)
 		{
 			term->nb_lines--;
 			int lsize = 0;
-			while (lsize < VGA_WIDTH)
+			while (lsize < term_width)
 			{
 				lsize += term->charsizes[term->begin_draw];
 				inc_index(&term->begin_draw);
@@ -173,19 +103,19 @@ void term_pop_char(term_obj_t *term)
 	
 	if (term->line_size == 0)
 	{
-		term->line_size = VGA_WIDTH-term->charsizes[term->pos];
-		if (term->nb_lines == VGA_HEIGHT)
+		term->line_size = term_width-term->charsizes[term->pos];
+		if (term->nb_lines == term_height)
 		{
 			int lsize = 0;
 			int i = term->begin_draw;
-			while (lsize < VGA_WIDTH)
+			while (lsize < term_width)
 			{
 				if (i == term->begin)
 					break;
 				dec_index(&i);
 				lsize += term->charsizes[i];
 			}
-			if (lsize == VGA_WIDTH)
+			if (lsize == term_width)
 			{
 				term->begin_draw = i;
 				term->nb_lines++;
@@ -207,6 +137,7 @@ void term_obj_draw(term_obj_t *term)
 		terminal_write(term->buffer+term->begin_draw, TERM_BUFF_SIZE-term->begin_draw);
 		terminal_write(term->buffer, term->pos);
 	}
+	terminal_show_cursor();
 }
 
 void term_clean_stack()
@@ -223,6 +154,8 @@ void term_clean_stack()
 
 void terminal_init()
 {
+	term_width = terminal_width();
+	term_height = terminal_height();
 	term_capslock = term_shift = 0;
 	term_stack = create_dynarray();
 	new_terminal();
@@ -235,7 +168,7 @@ file_descr_t *current_terminal()
 	return ((term_obj_t*)term_stack->array[term_stack->size-1])->fd;
 }
 
-uint32_t do_nothing()
+static uint32_t do_nothing()
 {
 	return 0;
 }
@@ -245,7 +178,7 @@ file_descr_t *new_terminal()
 	term_obj_t *term = (term_obj_t*) calloc(1, sizeof(term_obj_t));
 	file_descr_t *fd = (file_descr_t*) calloc(1, sizeof(file_descr_t));
 
-	term->waiting_proc = create_dynarray();
+	term->res = create_resource();
 	term->buffer = (char*) malloc(TERM_BUFF_SIZE*sizeof(char));
 	term->charsizes = (char*) malloc(TERM_BUFF_SIZE*sizeof(char));
 	term->nb_lines = 1;
@@ -290,12 +223,10 @@ int32_t term_obj_read(file_descr_t *fd, void *ptr, int32_t count)
 
 	term_obj_t *term = term_stack->array[fd->inode];
 	
-	while (term->begin_typed == term->begin_typing)
-	{
-		dynarray_push(term->waiting_proc, (void*) cur_pid);
-		proc_list[cur_pid]->state = WaitingTTY;
-		reschedule();
-	}
+	resource_request(term->res);
+
+	if (term->begin_typed == term->begin_typing)
+		resource_wait_event(term->res);
 
 	char *buffer = (char*) ptr;
 
@@ -312,6 +243,8 @@ int32_t term_obj_read(file_descr_t *fd, void *ptr, int32_t count)
 		buffer++;
 	}
 
+	resource_release(term->res);
+
 	return count0-count;
 }
 
@@ -319,7 +252,7 @@ void term_obj_close(file_descr_t *fd)
 {
 	int i = (int) fd->inode;
 	term_obj_t *term = term_stack->array[i];
-	free_dynarray(term->waiting_proc);
+	free_resource(term->res);
 	free(term->buffer);
 	free(term->charsizes);
 	free(fd);
@@ -387,17 +320,8 @@ void terminal_kb_event(kb_event_t evt)
 					term_push_char(term, '\n');
 					term->begin_typing = term->pos;
 					
-					dynarray_t *w = term->waiting_proc;
-					while (w->size)
-					{
-						int pid = (int) w->array[w->size-1];
-						dynarray_pop(w);
-						if (proc_list[pid] && proc_list[pid]->state == WaitingTTY)
-						{
-							make_runnable(pid);
-							break;
-						}
-					}
+					if (resource_waiting_event(term->res))
+						resource_event(term->res);
 					break;
 				case Kb_Tab:
 					term_push_char(term, '\t');

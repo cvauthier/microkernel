@@ -24,6 +24,9 @@ void jump_to_ring3(void (*start)(), stackint_t *stack);
 hw_context_t *create_hw_context();
 void free_hw_context(hw_context_t *ctx);
 
+void disable_interrupts();
+void enable_interrupts();
+
 /* Indépendant */
 
 #define KERNEL_STACK_SIZE 4096
@@ -37,7 +40,7 @@ void free_hw_context(hw_context_t *ctx);
 #define IDLE_PID 0
 #define ZOMBIE_SLAYER_PID 1
 
-enum { Runnable, Waiting, WaitingTTY, Zombie };
+enum { Runnable, Waiting, Zombie, WaitingResource };
 
 struct process_t
 {
@@ -68,6 +71,13 @@ typedef struct process_t process_t;
 /* L'organisation de l'userspace est plus ou moins celle du "flexible layout" de Linux, sans les régions de mémoire anonymes
  (code à partir de 0x08048000, data et bss juste après, puis le tas, et la pile à la fin) */
 
+struct resource_t
+{
+	queue_t *waiting_queue;
+	int waiting_event;
+};
+typedef struct resource_t resource_t;
+
 int kernel_proc(int (*start)(void*), void *arg);
 
 process_t *new_proc();
@@ -87,5 +97,20 @@ void make_runnable(int pid);
 void schedule(); // Met à jour cur_pid
 void scheduler_tick();
 void reschedule(); // Appelle schedule et change de processus
+
+/* Accès concurrent à une ressource
+	 Un processus peut demander une resource et est mis dans une file. Le processus en tête est celui qui a la ressource.
+	 Il peut demander d'attendre un évènement (par exemple la saisie de texte pour un terminal)
+*/
+
+resource_t *create_resource();
+
+void resource_request(resource_t *res);
+void resource_wait_event(resource_t *res);
+int resource_waiting_event(resource_t *res);
+void resource_event(resource_t *res);
+void resource_release(resource_t *res);
+
+void free_resource(resource_t *res);
 
 #endif

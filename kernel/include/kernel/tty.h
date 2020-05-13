@@ -12,6 +12,11 @@ void terminal_putchar(char c);
 void terminal_write(const char* data, size_t size);
 void terminal_writestring(const char* data);
 
+void terminal_show_cursor(); // Affiche le curseur à l'emplacement ACTUEL
+
+int terminal_width();
+int terminal_height();
+
 void terminal_init(); // Nécessite un gestionnaire de mémoire
 
 file_descr_t *new_terminal();

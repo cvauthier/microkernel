@@ -33,7 +33,8 @@ kernel/kernel.o \
 kernel/filesystem.o \
 kernel/process.o \
 kernel/keyboard.o \
-kernel/test.o \
+kernel/tty.o \
+kernel/pipes.o \
 kernel/syscalls_sched.o \
 kernel/syscalls_file.o \
 kernel/syscalls_exec.o \

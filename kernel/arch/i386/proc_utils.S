@@ -4,6 +4,8 @@
 .globl switch_initial # void switch_initial(hw_context_t *init)
 .globl kernel_proc_start # void kernel_proc_start()
 .globl forked_proc_start # void forked_proc_start();
+.globl enable_interrupts # void enable_interrupts();
+.globl disable_interrupts # void disable_interrupts();
 
 jump_to_ring3:
 	cli
@@ -59,4 +61,12 @@ kernel_proc_start:
 forked_proc_start:
 	popal
 	iret
+
+disable_interrupts:
+	cli
+	ret
+
+enable_interrupts:
+	sti
+	ret
 

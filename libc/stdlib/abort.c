@@ -1,15 +1,18 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <virux_lib.h>
+
+#if defined(__is_libk)
+#include <kernel/tty.h>
+#endif
 
 __attribute__((__noreturn__))
-void abort(void) {
+void abort(void) 
+{
 #if defined(__is_libk)
-	// TODO: Add proper kernel panic.
-	printf("kernel: panic: abort()\n");
+	terminal_clear();
+	terminal_writestring("ERROR\n-----\nThe kernel has encountered an unexpected error and cannot continue execution\n");
+	while (1);
 #else
-	// TODO: Abnormally terminate the process as if by SIGABRT.
-	printf("abort()\n");
+	exit(6);
 #endif
-	while (1) { }
 	__builtin_unreachable();
 }

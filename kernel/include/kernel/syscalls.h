@@ -14,7 +14,7 @@ void syscall_exit(int code);
 
 // Appels systèmes liés aux fichiers
 
-int syscall_open(const char *path);
+int syscall_open(const char *path, int flags);
 int32_t syscall_write(int fd, void *ptr, int32_t count);
 int32_t syscall_read(int fd, void *ptr, int32_t count);
 uint32_t syscall_seek(int fd, int32_t ofs, int flag);
@@ -32,6 +32,7 @@ void syscall_exec(const char *path, char **argv); // Exécute un fichier elf
 void *syscall_sbrk(int incr);
 char *syscall_getcwd(char *buf, size_t size);
 int syscall_chdir(const char *path);
+int syscall_pipe(int *pipefds, int flags);
 
 int syscall_invalid();
 

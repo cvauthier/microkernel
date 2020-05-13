@@ -14,12 +14,13 @@ uint32_t free_block_nb;
 uint32_t free_block_list;
 
 #define FILE_EOF 0x1
+#define FILE_READ 0x2
+#define FILE_WRITE 0x4
+#define FILE_CLOEXEC 0x8
 
-#define SEEKFD_CUR 0
-#define SEEKFD_BEGIN 1
-#define SEEKFD_END 2
+typedef enum { FileType_File, FileType_Directory, FileType_Terminal, FileType_Pipe } file_type_t;
 
-typedef enum { FileType_File, FileType_Directory, FileType_Terminal } file_type_t;
+struct resource_t;
 
 struct file_descr_t
 {
@@ -29,6 +30,8 @@ struct file_descr_t
 	int owners;
 	file_type_t type;
 	uint8_t flags;
+
+	struct resource_t *res;
 
 	int32_t (*read)(struct file_descr_t*,void*,int32_t);
 	int32_t (*write)(struct file_descr_t*,void*,int32_t);

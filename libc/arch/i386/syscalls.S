@@ -14,6 +14,7 @@
 .globl chdir 
 .globl dup 
 .globl dup2
+.globl pipe
 
 #include <kernel/syscall_codes.h>
 
@@ -72,6 +73,10 @@ dup:
 
 dup2:
 	mov $SYSCALL_DUP2, %eax
+	jmp syscall
+
+pipe:
+	mov $SYSCALL_PIPE, %eax
 	jmp syscall
 
 syscall:

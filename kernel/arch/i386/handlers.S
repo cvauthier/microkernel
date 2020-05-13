@@ -19,6 +19,7 @@
 .globl except17
 .globl except18
 .globl except19
+.globl except20
 .globl inter128
 .globl irq0
 .globl irq1
@@ -40,136 +41,220 @@
 except0:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $0
+	call exception_handler
+	add $8, %esp
 	popal
 	iret
 
 except1:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $1
+	call exception_handler
+	add $8, %esp
 	popal
 	iret
 
 except2:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $2
+	call exception_handler
+	add $8, %esp
 	popal
 	iret
 
 except3:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $3
+	call exception_handler
+	add $8, %esp
 	popal
 	iret
 
 except4:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $4
+	call exception_handler
+	add $8, %esp
 	popal
 	iret
 
 except5:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $5
+	call exception_handler
+	add $8, %esp
 	popal
 	iret
 
 except6:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $6
+	call exception_handler
+	add $8, %esp
 	popal
 	iret
 
 except7:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $7
+	call exception_handler
+	add $8, %esp
 	popal
 	iret
 
 except8:
 	cli
-	add $4,%esp
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $8
+	call exception_handler
+	add $12, %esp # Code d'erreur
 	popal
 	iret
 
 except9:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $9
+	call exception_handler
+	add $8, %esp
 	popal
 	iret
 
 except10:
 	cli
-	add $4,%esp
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $10
+	call exception_handler
+	add $12, %esp # Code d'erreur
 	popal
 	iret
 
 except11:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $11
+	call exception_handler
+	add $12, %esp # Code d'erreur
 	popal
 	iret
 
 except12:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $12
+	call exception_handler
+	add $12, %esp # Code d'erreur
 	popal
 	iret
 
 except13:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $13
+	call exception_handler
+	add $12, %esp # Code d'erreur
 	popal
 	iret
 
 except14:
 	cli
-	add $4,%esp
 	pushal
-	call page_fault_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $14
+	call exception_handler
+	add $12, %esp # Code d'erreur
 	popal
 	iret
 
 except16:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $16
+	call exception_handler
+	add $8, %esp
 	popal
 	iret
 
 except17:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $17
+	call exception_handler
+	add $12, %esp # Code d'erreur
 	popal
 	iret
 
 except18:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $18
+	call exception_handler
+	add $8, %esp
 	popal
 	iret
 
 except19:
 	cli
 	pushal
-	call default_handler
+	lea 32(%esp), %eax
+	push %eax
+	push $19
+	call exception_handler
+	add $8, %esp
+	popal
+	iret
+
+except20:
+	cli
+	pushal
+	lea 32(%esp), %eax
+	push %eax
+	push $20
+	call exception_handler
+	add $8, %esp
 	popal
 	iret
 

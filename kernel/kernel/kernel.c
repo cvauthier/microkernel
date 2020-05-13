@@ -13,8 +13,6 @@
 
 #include <kernel/multiboot.h>
 
-// extern void test_main();
-
 void install_std_streams()
 {
 	file_descr_t *term = current_terminal();
@@ -23,18 +21,27 @@ void install_std_streams()
 	term->owners+=3;
 }
 
-int some_task(__attribute__((unused)) void *unused)
+int shell_starter(__attribute__((unused)) void *unused)
 {
 	install_std_streams();
-/*
-	if (chdir("bin") < 0)
-		printf("Failed to chdir to bin\n");
-
-	printf("Trying to execute test...\n");
-	exec("test", 0);*/
 	exec("bin/shell", 0);
 	printf("Failed\n");
+	return 1;
+}
 
+int shell_spawner(__attribute__((unused)) void *unused)
+{
+	install_std_streams();
+
+	int code = 0;
+	while (!code)
+	{
+		int pid;
+		kernel_proc(shell_starter, 0);
+		wait(&pid, &code);
+	}
+
+	printf("Error : can't load the shell\n");
 	return 0;
 }
 
@@ -52,7 +59,7 @@ int idle(__attribute__((unused)) void *unused)
 	scheduling_on = 1;
 
 	kernel_proc(slayer, 0);
-	kernel_proc(some_task, 0);
+	kernel_proc(shell_spawner, 0);
 
 	while (1);
 	return 0;

@@ -4,6 +4,19 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define O_APPEND 1
+#define O_CLOEXEC 2
+#define O_CREAT 4
+#define O_DIRECTORY 8
+#define O_RDONLY 16
+#define O_WRONLY 32
+#define O_RDWR 48
+#define O_TRUNC 64
+
+#define SEEK_CUR 0
+#define SEEK_SET 1
+#define SEEK_END 2
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -14,7 +27,7 @@ int wait(int *pid, int *code);
 int fork();
 void exit(int code);
 
-int open(const char *path);
+int open(const char *path, int flags);
 void close(int fd);
 int32_t write(int fd, void *ptr, int32_t count);
 int32_t read(int fd, void *buffer, int32_t count);
@@ -29,6 +42,8 @@ void exec(const char *path, char **argv);
 
 char *getcwd(char *buf, size_t size);
 int chdir(const char *path);
+
+int pipe(int *pipefds, int flags); 
 
 // Utile pour le ramdisk
 

@@ -6,23 +6,23 @@ LIBS?=
 .PHONY: all clean install
 .SUFFIXES: .o .c .S
 
-USER_OBJS=test.o
+USER_OBJS=less.o
 
 include ../compil/make.config
 
-all: test
+all: less
 
-test: $(OBJS)
+less: $(OBJS)
 	$(CC_LINK) -o $@ $(CFLAGS) $(LINK_LIST)
 
 .c.o:
 	$(CC) -c $< -o $@ -std=gnu11 $(CFLAGS)
 
 clean:
-	rm -f test
+	rm -f less
 	rm -f $(OBJS) *.o */*.o */*/*.o
 
-install: test
+install: less
 	mkdir -p $(DESTDIR)$(BINDIR)
 	cp $< $(DESTDIR)$(BINDIR)
 	

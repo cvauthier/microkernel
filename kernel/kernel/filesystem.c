@@ -59,7 +59,7 @@ uint32_t rd_find_in_dir(uint32_t dir_inode, const char *name)
 	char buffer[32];
 	while (read_rd(dir, (void*)buffer, 32) > 0)
 	{
-		uint32_t ino = read_bigendian_int(buffer+28);
+		uint32_t ino = read_bigendian_int((uint8_t*)buffer+28);
 		buffer[28] = 0;
 		if (strcmp(name, buffer) == 0)
 		{
@@ -181,7 +181,7 @@ int32_t write_rd(file_descr_t *fd, void *ptr, int32_t count)
 	uint8_t *buffer = (uint8_t*) ptr;
 	int32_t count0 = count;
 
-	if (fd->size-fd->pos < count)
+	if (fd->size-fd->pos < (uint32_t)count)
 	{
 		if (next_pos >= fd->pos+count)
 		{
@@ -238,7 +238,7 @@ uint32_t seek_rd(file_descr_t *fd, int32_t ofs, int flag)
 	if (!fd->size)
 		return fd->pos;
 		
-	uint32_t origin = (flag == SEEKFD_CUR) ? fd->pos : (flag == SEEKFD_BEGIN) ? 0 : fd->size-1;
+	uint32_t origin = (flag == SEEK_CUR) ? fd->pos : (flag == SEEK_SET) ? 0 : fd->size-1;
 	uint32_t abs_ofs = (uint32_t) (ofs > 0 ? ofs : -ofs);
 
 	if (ofs > 0)
