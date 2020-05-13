@@ -12,6 +12,7 @@
 #define O_WRONLY 32
 #define O_RDWR 48
 #define O_TRUNC 64
+#define O_NODIR 128
 
 #define SEEK_CUR 0
 #define SEEK_SET 1
@@ -27,7 +28,7 @@ int wait(int *pid, int *code);
 int fork();
 void exit(int code);
 
-int open(const char *path, int flags);
+int open(const char *path, int flags); // Pour l'instant ignore les flags
 void close(int fd);
 int32_t write(int fd, void *ptr, int32_t count);
 int32_t read(int fd, void *buffer, int32_t count);

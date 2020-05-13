@@ -6,7 +6,7 @@ LIBS?=
 .PHONY: all clean install
 .SUFFIXES: .o .c .S
 
-USER_OBJS=main.o parser.o
+USER_OBJS=main.o parser.o eval.o misc.o
 
 include ../compil/make.config
 
