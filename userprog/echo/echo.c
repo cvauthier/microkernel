@@ -44,7 +44,7 @@ int main(int argc, char **argv)
 
 	while (*str)
 	{
-		if (*str == '\\')
+		if (*str == '\\' && e)
 		{
 			str++;
 			if (*str == 'n') putchar('\n');

@@ -288,7 +288,7 @@ int eval_command(cmd_t *cmd)
 			int pid1 = fork();
 			if (!pid1)
 			{
-				dup2(fd[1], 0); // 0 = stdout
+				dup2(fd[0], 0); // 0 = stdout
 				close(fd[1]);
 				close(fd[0]);
 				exit(eval_command(cmd->op1));
@@ -296,7 +296,7 @@ int eval_command(cmd_t *cmd)
 			int pid2 = fork();
 			if (!pid2)
 			{
-				dup2(fd[0], 1); // 1 = stdin
+				dup2(fd[1], 1); // 1 = stdin
 				close(fd[1]);
 				close(fd[0]);
 				exit(eval_command(cmd->op2));

@@ -1,5 +1,5 @@
 SYSTEM_HEADER_PROJECTS="libc kernel"
-PROJECTS="libc kernel userprog/compil userprog/echo userprog/less userprog/shell userprog/pwd rdmaker"
+PROJECTS="libc kernel userprog/compil userprog/echo userprog/less userprog/shell userprog/pwd userprog/hangman userprog/moreless rdmaker"
 
 export MAKE=${MAKE:-make}
 export HOST=${HOST:-$(./default-host.sh)}
