@@ -30,12 +30,9 @@ LIBK_CPPFLAGS:=$(LIBK_CPPFLAGS) $(KERNEL_ARCH_CPPFLAGS)
 FREEOBJS=\
 $(ARCH_FREEOBJS) \
 stdio/stdio.o \
-stdlib/abort.o \
+stdlib/stdlib.o \
 stdlib/malloc.o \
-string/memcmp.o \
-string/memcpy.o \
-string/memmove.o \
-string/memset.o \
+string/mem.o \
 string/string.o \
 virux_lib/virux_utils.o \
 

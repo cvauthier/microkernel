@@ -46,6 +46,8 @@ int chdir(const char *path);
 
 int pipe(int *pipefds, int flags); 
 
+unsigned int gettime();
+
 // Utile pour le ramdisk
 
 uint32_t read_bigendian_int(uint8_t *ptr);

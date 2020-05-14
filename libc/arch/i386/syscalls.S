@@ -15,6 +15,7 @@
 .globl dup 
 .globl dup2
 .globl pipe
+.globl gettime
 
 #include <kernel/syscall_codes.h>
 
@@ -77,6 +78,10 @@ dup2:
 
 pipe:
 	mov $SYSCALL_PIPE, %eax
+	jmp syscall
+
+gettime:
+	mov $SYSCALL_GETTIME, %eax
 	jmp syscall
 
 syscall:

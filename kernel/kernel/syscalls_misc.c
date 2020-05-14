@@ -4,6 +4,7 @@
 #include <kernel/memory.h>
 #include <kernel/filesystem.h>
 #include <kernel/pipes.h>
+#include <kernel/timer.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -115,6 +116,11 @@ int syscall_pipe(int *pipefds, int flags)
 	pipefds[0] = p->files->size-2;
 	pipefds[1] = p->files->size-1;
 	return 0;
+}
+
+unsigned int syscall_gettime()
+{
+	return total_time;
 }
 
 int syscall_invalid()

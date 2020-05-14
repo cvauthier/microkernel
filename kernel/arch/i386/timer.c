@@ -44,6 +44,7 @@ void clock_init()
 
 	callout_list = 0;
 	clock_on = 1;
+	total_time = 0;
 }
 
 void clock_tick()
@@ -51,6 +52,7 @@ void clock_tick()
 	if (!clock_on)
 		return;
 
+	total_time++;
 	if (callout_list != 0)
 	{
 		callout_list->callout.ms_left--;

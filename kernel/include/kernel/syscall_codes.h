@@ -13,6 +13,7 @@
 #define SYSCALL_DUP 12
 #define SYSCALL_DUP2 13
 #define SYSCALL_PIPE 14
+#define SYSCALL_GETTIME 15
 
-#define NB_SYSCALLS 15
+#define NB_SYSCALLS 16
 

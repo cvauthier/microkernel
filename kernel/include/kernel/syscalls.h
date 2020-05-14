@@ -33,6 +33,7 @@ void *syscall_sbrk(int incr);
 char *syscall_getcwd(char *buf, size_t size);
 int syscall_chdir(const char *path);
 int syscall_pipe(int *pipefds, int flags);
+unsigned int syscall_gettime();
 
 int syscall_invalid();
 

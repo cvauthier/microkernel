@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <virux_lib.h>
 
 #if defined(__is_libk)
@@ -16,3 +17,17 @@ void abort(void)
 #endif
 	__builtin_unreachable();
 }
+
+static unsigned int next = 0;
+
+void srand(unsigned int seed)
+{
+	next = seed;
+}
+
+int rand()
+{
+	next = next * 1103515245 + 12345;
+	return (int) (next/65536) % (RAND_MAX+1);
+}
+

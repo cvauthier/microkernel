@@ -143,6 +143,7 @@ void interrupts_setup()
 	syscalls_addr[SYSCALL_DUP] = (uint32_t) syscall_dup;
 	syscalls_addr[SYSCALL_DUP2] = (uint32_t) syscall_dup2;
 	syscalls_addr[SYSCALL_PIPE] = (uint32_t) syscall_pipe;
+	syscalls_addr[SYSCALL_GETTIME] = (uint32_t) syscall_gettime;
 
 	load_idt(kernel_idt);
 }
