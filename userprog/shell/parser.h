@@ -12,7 +12,6 @@ void free_tok(token_t *t);
 token_t *create_token(int type, char *s);
 
 void free_tokenlist(dynarray_t *arr);
-char *parse_token(int *eol, int *eof, int *error);
 dynarray_t *tokenize(int *eof, int *error);
 
 cmd_t *parse_simple_cmd_rec(dynarray_t *tlist, int *i, int *error);

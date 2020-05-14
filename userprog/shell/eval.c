@@ -61,7 +61,7 @@ void setvar(const char *name, const char *val)
 	while (index < var_list->size)
 	{
 		v = (var_t*) var_list->array[index];
-		if (v && strcmp(v->name, name))
+		if (v && strcmp(v->name, name) == 0)
 			break;
 		index++;
 	}
@@ -103,9 +103,29 @@ char *eval_str(const char *str)
 			else
 			{
 				dynarray_t *var_name = create_dynarray();
-				while (*str && (isalpha(*str) || isnum(*str) ||  *str == '_'))
+				
+				int paren = (*str == '(');
+				if (paren) str++;
+				if (isalpha(*str) || *str=='_')
+				{
+					while (*str && (isalpha(*str) |  *str == '_'))
+						dynarray_push(var_name, (void*) *(str++));
+				}
+				else if (*str == '?')
 					dynarray_push(var_name, (void*) *(str++));
-			
+				
+				if (paren)
+				{
+					if (*str != ')')
+					{
+						printf("Error : unclosed parenthesis\n");
+						free_dynarray(stack);
+						free_dynarray(var_name);
+						return 0;
+					}
+					str++;
+				}
+
 				char *name = dynarray_to_str(var_name);
 				free_dynarray(var_name);
 				const char *val = getvar(name);
@@ -127,14 +147,18 @@ char *eval_str(const char *str)
 	return res;
 }
 
-void eval_args(simple_cmd_t *cmd)
+int eval_args(simple_cmd_t *cmd)
 {
 	for (int i = 0 ; i < cmd->args->size ; i++)
 	{
 		char *arg = (char*) cmd->args->array[i];
-		cmd->args->array[i] = (void*) eval_str(arg);
+		char *arg2 = (void*) eval_str(arg);
+		if (!arg2)
+			return -1;
+		cmd->args->array[i] =	arg2;
 		free(arg);
 	}
+	return 0;
 }
 
 int eval_simple_command(simple_cmd_t *cmd)
@@ -152,7 +176,8 @@ int eval_simple_command(simple_cmd_t *cmd)
 		}
 		else
 		{
-			eval_args(cmd);
+			if (eval_args(cmd) < 0)
+				return 1;
 			const char *path = (const char*) cmd->args->array[1];
 			if (chdir(path) < 0)
 			{
@@ -172,14 +197,17 @@ int eval_simple_command(simple_cmd_t *cmd)
 		{
 			char *name = (char*) cmd->args->array[0];
 			int i = 0;
-			while (name[i] && (isalpha(name[i]) || isnum(name[i]) || name[i] == '_'))
+			while (name[i] && (isalpha(name[i]) || name[i] == '_'))
 				i++;
 
 			if (!name[i])
 			{
-				char *val = eval_str((char*) cmd->args->array[1]);
-				setvar(name, val);
-				free(val);
+				char *val = eval_str((char*) cmd->args->array[2]);
+				if (val)
+				{
+					setvar(name, val);
+					free(val);
+				}
 			}
 			else
 			{
@@ -190,12 +218,34 @@ int eval_simple_command(simple_cmd_t *cmd)
 	}
 	else
 	{
-		eval_args(cmd);
+		if (eval_args(cmd) < 0)
+			return 0;
 		dynarray_push(cmd->args, 0);
 		int pid = fork();
 		if (!pid)
 		{
 			exec((char*) cmd->args->array[0], (char**) cmd->args->array);
+			
+			char *arg0 = (char*) cmd->args->array[0];
+			int n = strlen(arg0);
+			const char *path = getvar("PATH");
+			while (*path)
+			{
+				const char *next = strchr(path, ':');
+				next = next ? next : path+strlen(path);
+				
+				char *new_arg = (char*) malloc((2+(next-path)+n)*sizeof(char));
+				memcpy(new_arg,path,next-path);
+				new_arg[next-path] = '/';
+				strcpy(new_arg+(next-path)+1,arg0);
+
+				cmd->args->array[0] = (void*) new_arg;
+				exec(new_arg, (char**) cmd->args->array);
+
+				free(new_arg);
+				path = next;
+			}
+			
 			printf("Command failed\n");
 			exit(1);
 		}

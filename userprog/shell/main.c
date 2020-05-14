@@ -15,6 +15,9 @@ int main(int argc, char **argv)
 	var_list = create_dynarray();
 	int eof = 0;
 
+	setvar("?", "0");
+	setvar("PATH", "/bin/");
+
 	while (!eof)
 	{
 		char *cwd = working_dir();

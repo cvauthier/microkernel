@@ -51,6 +51,7 @@ char *str_of_int(int n)
 
 	char *s = (char*) calloc(nb_chars+1,sizeof(char));
 	int i = nb_chars-1;
+	m = n;
 	while (m)
 	{
 		s[i--] = '0'+(m%10);
