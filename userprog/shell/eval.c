@@ -229,12 +229,15 @@ int eval_simple_command(simple_cmd_t *cmd)
 			char *arg0 = (char*) cmd->args->array[0];
 			int n = strlen(arg0);
 			const char *path = getvar("PATH");
-			while (*path)
+			int cont = (*path != 0);
+
+			while (cont)
 			{
 				const char *next = strchr(path, ':');
+				cont = (next != 0);
 				next = next ? next : path+strlen(path);
 				
-				char *new_arg = (char*) malloc((2+(next-path)+n)*sizeof(char));
+				char *new_arg = (char*) calloc((2+(next-path)+n),sizeof(char));
 				memcpy(new_arg,path,next-path);
 				new_arg[next-path] = '/';
 				strcpy(new_arg+(next-path)+1,arg0);
@@ -243,7 +246,7 @@ int eval_simple_command(simple_cmd_t *cmd)
 				exec(new_arg, (char**) cmd->args->array);
 
 				free(new_arg);
-				path = next;
+				path = next+1;
 			}
 			
 			printf("Command failed\n");
