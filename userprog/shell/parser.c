@@ -3,6 +3,9 @@
 
 #include <stdio.h>
 
+/* Code TRES rudimentaire -- il serait plus approprié d'écrire le parseur avec
+ * flex et bison */
+
 enum { Tok_String, Tok_Pipe, Tok_And, Tok_Or, Tok_Seq, Tok_LPar, Tok_RPar };
 
 struct token_t
